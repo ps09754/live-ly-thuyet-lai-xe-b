@@ -3,6 +3,7 @@ import { Sparkles, Heart } from 'lucide-react';
 import { GameSettings, UserVote } from '../types/driving';
 import { cleanViewerName } from '../services/liveVoiceInteractions';
 import { socketService } from '../services/socketService';
+import { drivingSoundEngine } from '../services/drivingSoundEngine';
 
 interface InteractiveTeacherAvatarProps {
   settings?: GameSettings;
@@ -56,8 +57,20 @@ export const InteractiveTeacherAvatar: React.FC<InteractiveTeacherAvatarProps> =
   const [currentBubble, setCurrentBubble] = useState<string | null>(null);
   const [bubbleKey, setBubbleKey] = useState<number>(0);
   const [hearts, setHearts] = useState<Array<{ id: number; x: number; y: number }>>([]);
+  const [isAudioSpeaking, setIsAudioSpeaking] = useState<boolean>(false);
   const lastVoteTimestampRef = useRef<number>(0);
   const hideBubbleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Subscribe to realtime Web Audio / TTS speaking events from sound engine
+  useEffect(() => {
+    const unsubscribe = drivingSoundEngine.onSpeechStatusChange((speaking) => {
+      setIsAudioSpeaking(speaking);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Total speaking state: either question TTS is reading, or sound engine is actively playing audio
+  const isSpeaking = isReading || isAudioSpeaking;
 
   // Show a speech bubble for duration ms
   const showBubbleText = (text: string, durationMs: number = 4000) => {
@@ -152,30 +165,39 @@ export const InteractiveTeacherAvatar: React.FC<InteractiveTeacherAvatarProps> =
   const sizeStyles = {
     small: {
       width: 'w-20', // ~80px
-      containerMaxW: 'max-w-[130px]',
+      containerMaxW: 'max-w-[140px]',
       badgeText: 'text-[9px] px-2 py-0.5',
       bubbleText: 'text-[10px]',
     },
     medium: {
       width: 'w-24', // ~96px - 105px
-      containerMaxW: 'max-w-[155px]',
+      containerMaxW: 'max-w-[165px]',
       badgeText: 'text-[10px] px-2.5 py-0.5',
       bubbleText: 'text-[11px]',
     },
     large: {
       width: 'w-32', // ~128px
-      containerMaxW: 'max-w-[180px]',
+      containerMaxW: 'max-w-[190px]',
       badgeText: 'text-[11px] px-3 py-1',
       bubbleText: 'text-xs',
     },
   }[avatarSize];
 
-  const imgSrc = avatarMedia === 'gif' ? '/co-ngan.gif' : '/co-ngan-full.png';
+  // Dynamic Image Source:
+  // When speaking with audio: Use talking animation (talking gif or open mouth)
+  // When idle: Use breathing gif or static full png
+  const imgSrc = isSpeaking
+    ? avatarMedia === 'gif'
+      ? '/co-ngan-talking.gif'
+      : '/co-ngan-open.png'
+    : avatarMedia === 'gif'
+    ? '/co-ngan.gif'
+    : '/co-ngan-full.png';
 
   return (
     <div
       onClick={handleAvatarClick}
-      className="absolute bottom-2.5 right-1.5 z-25 flex flex-col items-center select-none cursor-pointer group"
+      className="absolute bottom-2.5 left-2 z-25 flex flex-col items-center select-none cursor-pointer group"
       style={{ filter: 'drop-shadow(0 6px 14px rgba(13, 148, 136, 0.28))' }}
       title="Nhấn để tương tác với Trợ Giảng AI"
     >
@@ -190,43 +212,69 @@ export const InteractiveTeacherAvatar: React.FC<InteractiveTeacherAvatarProps> =
         </div>
       ))}
 
-      {/* Interactive Speech Bubble */}
+      {/* Interactive Speech Bubble - positioned on the left pointing down to Cô Ngân */}
       {currentBubble && (
         <div
           key={bubbleKey}
-          className={`absolute -top-14 right-1 ${sizeStyles.containerMaxW} bg-white/95 backdrop-blur-md text-slate-800 px-3 py-1.5 rounded-2xl rounded-br-sm shadow-xl border border-teal-200/80 pointer-events-none transition-all duration-300 animate-in fade-in zoom-in-95 z-40 flex items-center gap-1.5`}
+          className={`absolute -top-14 left-0 min-w-[130px] ${sizeStyles.containerMaxW} bg-white/95 backdrop-blur-md text-slate-800 px-3 py-1.5 rounded-2xl rounded-bl-sm shadow-xl border border-teal-200/80 pointer-events-none transition-all duration-300 animate-in fade-in zoom-in-95 z-40 flex items-center gap-1.5`}
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-spin" style={{ animationDuration: '4s' }} />
           <p className={`${sizeStyles.bubbleText} font-semibold leading-tight text-slate-700 tracking-tight`}>
             {currentBubble}
           </p>
-          {/* Tail pointing towards Cô Ngân's head */}
-          <div className="absolute -bottom-1.5 right-4 w-3 h-3 bg-white/95 border-b border-r border-teal-200/80 transform rotate-45" />
+          {/* Tail pointing down towards Cô Ngân's head */}
+          <div className="absolute -bottom-1.5 left-7 w-3 h-3 bg-white/95 border-b border-r border-teal-200/80 transform rotate-45" />
         </div>
       )}
 
-      {/* Character Image with Floating Breathing Motion */}
-      <div className="relative flex flex-col items-center">
-        <img
-          src={imgSrc}
-          alt={avatarName}
-          className={`${sizeStyles.width} h-auto object-contain transition-transform duration-300 group-hover:scale-105 active:scale-95 animate-float-breathing`}
-          draggable={false}
-          onError={(e) => {
-            // Fallback to static png if gif fails
-            const target = e.target as HTMLImageElement;
-            if (!target.src.endsWith('co-ngan-full.png')) {
-              target.src = '/co-ngan-full.png';
-            }
-          }}
-        />
+      {/* Character Image Container with Floating Breathing or Talking Motion */}
+      <div className={`relative flex flex-col items-center ${isSpeaking ? 'animate-npc-talk' : 'animate-float-breathing'}`}>
+        <div className="relative">
+          <img
+            src={imgSrc}
+            alt={avatarName}
+            className={`${sizeStyles.width} h-auto object-contain transition-transform duration-300 group-hover:scale-105 active:scale-95`}
+            draggable={false}
+            onError={(e) => {
+              // Fallback to static png if gif fails
+              const target = e.target as HTMLImageElement;
+              if (!target.src.endsWith('co-ngan-full.png')) {
+                target.src = '/co-ngan-full.png';
+              }
+            }}
+          />
+
+          {/* Real-time Animated Lip-Sync Mouth Overlay: active whenever sound/TTS is speaking */}
+          {isSpeaking && (
+            <div
+              className="absolute pointer-events-none z-30 animate-mouth-talk"
+              style={{
+                top: '17.34%',
+                left: '44.07%',
+                transform: 'translate(-50%, -50%)',
+                width: '7.5%',
+                height: '1.8%',
+              }}
+            >
+              {/* Cute anime talking mouth flap SVG */}
+              <svg viewBox="0 0 12 7" className="w-full h-full overflow-visible">
+                {/* Dark ruby interior */}
+                <ellipse cx="6" cy="3.5" rx="5.5" ry="3" fill="#84202b" stroke="#5d141c" strokeWidth="0.5" />
+                {/* White teeth gleam */}
+                <path d="M 2 2 Q 6 3.5 10 2" stroke="#ffffff" strokeWidth="1" fill="none" opacity="0.9" />
+                {/* Tongue pink */}
+                <path d="M 3 4.5 Q 6 6.5 9 4.5" fill="#e75e72" />
+              </svg>
+            </div>
+          )}
+        </div>
 
         {/* Name Badge */}
         <div
           className={`-mt-1 flex items-center justify-center gap-1 bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-600 text-white font-bold rounded-full shadow-md border border-white/60 backdrop-blur-sm ${sizeStyles.badgeText}`}
         >
-          {/* Subtle live soundwave equalizer bars when reading */}
-          {isReading && (
+          {/* Subtle live soundwave equalizer bars when reading / speaking */}
+          {isSpeaking && (
             <div className="flex items-center gap-0.5 mr-0.5">
               <span className="w-0.5 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
               <span className="w-0.5 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

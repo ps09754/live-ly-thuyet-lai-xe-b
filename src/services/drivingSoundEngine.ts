@@ -5,6 +5,23 @@ class DrivingSoundEngine {
   private currentAudio: HTMLAudioElement | null = null;
   private isMuted: boolean = false;
   private onCurrentEndCallbacks: Array<() => void> = [];
+  private speechListeners: Array<(isSpeaking: boolean) => void> = [];
+
+  public onSpeechStatusChange(cb: (isSpeaking: boolean) => void): () => void {
+    this.speechListeners.push(cb);
+    cb(this.isSpeaking());
+    return () => {
+      this.speechListeners = this.speechListeners.filter((l) => l !== cb);
+    };
+  }
+
+  private notifySpeechStatus(speaking: boolean): void {
+    this.speechListeners.forEach((cb) => {
+      try {
+        cb(speaking);
+      } catch {}
+    });
+  }
 
   private getAudioContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
@@ -118,10 +135,12 @@ class DrivingSoundEngine {
         this.currentAudio = audio;
 
         audio.onplay = () => {
+          this.notifySpeechStatus(true);
           if (!isCancelled) onStart?.();
         };
 
         audio.onended = () => {
+          this.notifySpeechStatus(false);
           if (objectUrlToRevoke) {
             URL.revokeObjectURL(objectUrlToRevoke);
             objectUrlToRevoke = null;
@@ -134,6 +153,7 @@ class DrivingSoundEngine {
         };
 
         audio.onerror = () => {
+          this.notifySpeechStatus(false);
           if (objectUrlToRevoke) {
             URL.revokeObjectURL(objectUrlToRevoke);
             objectUrlToRevoke = null;
@@ -176,6 +196,7 @@ class DrivingSoundEngine {
       if (this.currentAudio) {
         this.currentAudio.pause();
         this.currentAudio = null;
+        this.notifySpeechStatus(false);
       }
       if (objectUrlToRevoke) {
         URL.revokeObjectURL(objectUrlToRevoke);

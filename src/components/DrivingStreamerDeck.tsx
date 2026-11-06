@@ -791,7 +791,7 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-pink-400" />
             <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-              Trợ Giảng AI / Avatar Tương Tác Góc Dưới (Cô Ngân)
+              Trợ Giảng AI / Avatar Tương Tác Góc Dưới Trái (Cô Ngân)
             </h3>
           </div>
           <div className="flex items-center gap-2">

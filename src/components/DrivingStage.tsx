@@ -193,7 +193,7 @@ export const DrivingStage: React.FC<DrivingStageProps> = ({
           />
         </div>
 
-        {/* 4. Interactive Teacher Avatar (Cô Ngân) at Bottom-Right */}
+        {/* 4. Interactive Teacher Avatar (Cô Ngân) at Bottom-Left */}
         <InteractiveTeacherAvatar
           settings={settings}
           phase={phase}
