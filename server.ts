@@ -974,6 +974,10 @@ async function ensureZeroTtsRunning() {
       stdio: 'inherit',
       detached: false,
     });
+    zeroTtsChild.on('error', (err) => {
+      console.warn('[ZeroTTS] Không tìm thấy python3 hoặc lỗi khởi chạy (sẽ tự động dùng Edge TTS trực tuyến):', err.message);
+      zeroTtsChild = null;
+    });
     zeroTtsChild.on('exit', (code) => {
       console.log(`[ZeroTTS] Service exited with code ${code}`);
     });
