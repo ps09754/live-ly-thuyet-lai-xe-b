@@ -162,7 +162,7 @@ export default function App() {
           const midCallout = getRandomMidCountdownCallout({ votes: votesRef.current });
           const cancelMid = drivingSoundEngine.playTTS(midCallout, {
             rate: settingsRef.current.voiceRate,
-            voiceId: settingsRef.current.voiceId || 'zerotts-quangminh',
+            voiceId: settingsRef.current.voiceId || 'zerotts-maichi',
             voiceGender: settingsRef.current.voiceGender,
             volume: settingsRef.current.voiceVolume ?? 1.0,
           });
@@ -196,7 +196,7 @@ export default function App() {
         const shoutout = getInstantVoteShoutout(newVote);
         const cancelShoutout = drivingSoundEngine.playTTS(shoutout, {
           rate: settingsRef.current.voiceRate,
-          voiceId: settingsRef.current.voiceId || 'zerotts-quangminh',
+          voiceId: settingsRef.current.voiceId || 'zerotts-maichi',
           voiceGender: settingsRef.current.voiceGender,
           volume: settingsRef.current.voiceVolume ?? 1.0,
         });
@@ -280,7 +280,7 @@ export default function App() {
 
         const cancelQuestion = drivingSoundEngine.playTTS(speechText, {
           rate: settings.voiceRate,
-          voiceId: settings.voiceId || 'zerotts-quangminh',
+          voiceId: settings.voiceId || 'zerotts-maichi',
           questionId: q.id,
           voiceGender: settings.voiceGender,
           volume: settings.voiceVolume ?? 1.0,
@@ -294,7 +294,7 @@ export default function App() {
               const calloutText = getRandomCountdownCallout(q.options?.length || 4);
               const cancelCallout = drivingSoundEngine.playTTS(calloutText, {
                 rate: settings.voiceRate,
-                voiceId: settings.voiceId || 'zerotts-quangminh',
+                voiceId: settings.voiceId || 'zerotts-maichi',
                 voiceGender: settings.voiceGender,
                 volume: settings.voiceVolume ?? 1.0,
               });
@@ -308,7 +308,7 @@ export default function App() {
         // Pre-fetch audio câu kế tiếp
         const nextQ = questions[currentIndex + 1];
         if (nextQ) {
-          drivingSoundEngine.prefetchTTS(`Câu ${nextQ.id}. ${nextQ.question}`, settings.voiceId || 'zerotts-quangminh', nextQ.id);
+          drivingSoundEngine.prefetchTTS(`Câu ${nextQ.id}. ${nextQ.question}`, settings.voiceId || 'zerotts-maichi', nextQ.id);
         }
       } catch (err) {
         console.warn('[Audio] Phase reading error:', err);
@@ -332,7 +332,7 @@ export default function App() {
 
               const cancelReveal = drivingSoundEngine.playTTS(revealPhrase, {
                 rate: settings.voiceRate,
-                voiceId: settings.voiceId || 'zerotts-quangminh',
+                voiceId: settings.voiceId || 'zerotts-maichi',
                 voiceGender: settings.voiceGender,
                 volume: settings.voiceVolume ?? 1.0,
                 onEnd: () => {
@@ -340,7 +340,7 @@ export default function App() {
                   const transitionPhrase = getRandomTransitionCallout();
                   const cancelTransition = drivingSoundEngine.playTTS(transitionPhrase, {
                     rate: settings.voiceRate,
-                    voiceId: settings.voiceId || 'zerotts-quangminh',
+                    voiceId: settings.voiceId || 'zerotts-maichi',
                     voiceGender: settings.voiceGender,
                     volume: settings.voiceVolume ?? 1.0,
                   });

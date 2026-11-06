@@ -97,7 +97,7 @@ class DrivingSoundEngine {
       onEnd?: () => void;
     } = {}
   ): () => void {
-    const { rate = 1.0, voiceId = 'zerotts-quangminh', questionId, volume = 1.0, onStart, onEnd } = options;
+    const { rate = 1.0, voiceId = 'zerotts-maichi', questionId, volume = 1.0, onStart, onEnd } = options;
 
     if (this.isMuted) {
       onEnd?.();
@@ -209,7 +209,7 @@ class DrivingSoundEngine {
   public prefetchTTS(text: string, voiceId?: string, questionId?: number): void {
     if (typeof window === 'undefined') return;
     const cleanText = text.replace(/[*_#`]/g, '').trim();
-    const voiceParam = voiceId || 'zerotts-quangminh';
+    const voiceParam = voiceId || 'zerotts-maichi';
     const qidParam = questionId ? `&qid=${questionId}` : '';
     const url = `/api/tts?text=${encodeURIComponent(cleanText)}&voice=${encodeURIComponent(voiceParam)}${qidParam}`;
     fetch(url).catch(() => {});

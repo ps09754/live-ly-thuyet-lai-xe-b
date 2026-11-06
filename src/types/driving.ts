@@ -42,11 +42,11 @@ export interface VoiceOption {
 
 export const AVAILABLE_VOICES: VoiceOption[] = [
   {
-    id: 'zerotts-quangminh',
-    name: 'Quang Minh (News Demo)',
+    id: 'zerotts-maichi',
+    name: 'Mai Chi (Nữ Nhẹ Nhàng)',
     tag: 'ZeroTTS AI',
-    desc: 'Giọng Nam MC thời sự, tròn vành, tự nhiên, mềm mại',
-    avatar: '🎙️',
+    desc: 'Giọng Nữ trẻ, cực kỳ mềm mại, thân thiện, dễ nghe',
+    avatar: '🌸',
     engine: 'zerotts',
   },
   {
@@ -58,35 +58,11 @@ export const AVAILABLE_VOICES: VoiceOption[] = [
     engine: 'zerotts',
   },
   {
-    id: 'zerotts-maichi',
-    name: 'Mai Chi (Nữ Nhẹ Nhàng)',
-    tag: 'ZeroTTS AI',
-    desc: 'Giọng Nữ trẻ, cực kỳ mềm mại, thân thiện, dễ nghe',
-    avatar: '🌸',
-    engine: 'zerotts',
-  },
-  {
-    id: 'zerotts-giahuy',
-    name: 'Gia Huy (Nam Trầm Ấm)',
-    tag: 'ZeroTTS AI',
-    desc: 'Giọng Nam ấm áp, nhẹ nhàng, tâm tình',
-    avatar: '🧔',
-    engine: 'zerotts',
-  },
-  {
     id: 'vi-VN-HoaiMyNeural',
     name: 'Hoài My (Edge Nữ)',
     tag: 'Edge TTS',
     desc: 'Giọng Nữ chuẩn miền Bắc, mượt mà',
     avatar: '👧',
-    engine: 'edgetts',
-  },
-  {
-    id: 'vi-VN-NamMinhNeural',
-    name: 'Nam Minh (Edge Nam)',
-    tag: 'Edge TTS',
-    desc: 'Giọng Nam chuẩn sát hạch Cục CSGT',
-    avatar: '👨‍✈️',
     engine: 'edgetts',
   },
 ];
@@ -96,7 +72,7 @@ export interface GameSettings {
   autoNextDelay: number; // delay before next question (e.g. 5)
   autoPlay: boolean;
   enableTTS: boolean;
-  voiceId?: string; // e.g. zerotts-quangminh, vi-VN-NamMinhNeural
+  voiceId?: string; // e.g. zerotts-maichi, vi-VN-HoaiMyNeural
   voiceGender: 'male' | 'female';
   voiceRate: number;
   voiceVolume: number; // 0.0 to 1.0 (0% to 100%)

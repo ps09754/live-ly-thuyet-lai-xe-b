@@ -103,7 +103,7 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
     const testSampleText = `Xin chào các bạn! Đây là câu hỏi sát hạch lý thuyết lái xe ô tô sáu trăm câu. Chúc các bạn ôn thi đạt kết quả tốt nhất.`;
     drivingSoundEngine.playTTS(testSampleText, {
       rate: settings.voiceRate || 1.0,
-      voiceId: settings.voiceId || 'zerotts-quangminh',
+      voiceId: settings.voiceId || 'zerotts-maichi',
       voiceGender: settings.voiceGender || 'male',
       volume: settings.voiceVolume ?? 1.0,
       onStart: () => setIsPlayingTestVoice(true),
@@ -474,13 +474,13 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
           <div className="flex items-center justify-between text-xs">
             <span className="font-bold text-slate-300">Giọng đọc AI (ZeroTTS & Edge):</span>
             <span className="text-[11px] text-teal-400 font-semibold">
-              {AVAILABLE_VOICES.find((v) => v.id === (settings.voiceId || 'zerotts-quangminh'))?.tag || 'ZeroTTS AI'}
+              {AVAILABLE_VOICES.find((v) => v.id === (settings.voiceId || 'zerotts-maichi'))?.tag || 'ZeroTTS AI'}
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
             {AVAILABLE_VOICES.map((v) => {
-              const isSelected = (settings.voiceId || 'zerotts-quangminh') === v.id;
+              const isSelected = (settings.voiceId || 'zerotts-maichi') === v.id;
               return (
                 <button
                   key={v.id}

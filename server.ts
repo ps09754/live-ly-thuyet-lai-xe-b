@@ -921,8 +921,8 @@ const DEFAULT_TTS_VOICE = 'zerotts-maichi';
 const TTS_PITCH = '-2%';
 const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-async function edgeTts(text: string, rate: number, voice: string = 'vi-VN-NamMinhNeural'): Promise<Buffer> {
-  const selectedVoice = voice.startsWith('vi-VN') ? voice : 'vi-VN-NamMinhNeural';
+async function edgeTts(text: string, rate: number, voice: string = 'vi-VN-HoaiMyNeural'): Promise<Buffer> {
+  const selectedVoice = voice.startsWith('vi-VN') ? voice : 'vi-VN-HoaiMyNeural';
   let lastErr: unknown;
 
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -1022,14 +1022,12 @@ app.get('/api/tts', async (req, res) => {
       }
     }
 
-    // 2. Edge TTS fallback / native
-    let edgeVoice = 'vi-VN-NamMinhNeural';
+    // 2. Edge TTS fallback / native (Female voice Hoai My)
+    let edgeVoice = 'vi-VN-HoaiMyNeural';
     if (voice.startsWith('vi-VN')) {
       edgeVoice = voice;
-    } else if (voice.includes('baotrang') || voice.includes('maichi') || voice.includes('hamy') || voice.includes('kimoanh')) {
-      edgeVoice = 'vi-VN-HoaiMyNeural';
     } else {
-      edgeVoice = 'vi-VN-NamMinhNeural';
+      edgeVoice = 'vi-VN-HoaiMyNeural';
     }
     const cacheKey = `${edgeVoice}|${rate}|${text}`;
     let audio = ttsCache.get(cacheKey);
