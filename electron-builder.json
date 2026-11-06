@@ -1,0 +1,49 @@
+{
+  "appId": "com.dichua.drivingquizlive",
+  "productName": "600 Cau Sat Hach Live",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-server/**/*",
+    "public/**/*",
+    "electron/**/*",
+    "scripts/**/*",
+    "package.json"
+  ],
+  "asar": true,
+  "asarUnpack": [
+    "dist/**/*",
+    "dist-server/**/*",
+    "public/**/*",
+    "scripts/**/*"
+  ],
+  "mac": {
+    "category": "public.app-category.education",
+    "identity": null,
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["arm64"]
+      }
+    ]
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true
+  }
+}

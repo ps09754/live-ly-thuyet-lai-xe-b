@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>600 Câu Lý Thuyết Lái Xe B2/C - LIVE Launcher</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-drag: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      overflow: hidden;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .badge-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0d9488, #059669);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 900;
+      box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);
+    }
+
+    .title-group h1 {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+      text-transform: uppercase;
+    }
+
+    .title-group p {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    /* Status indicator card */
+    .status-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+
+    .status-stopped {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .status-starting {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .status-running {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-running .dot {
+      box-shadow: 0 0 8px currentColor;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .url-text {
+      font-size: 11px;
+      font-weight: 600;
+      color: #cbd5e1;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    /* Big Action Button */
+    .action-button-container {
+      margin-bottom: 18px;
+    }
+
+    .btn-main {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 900;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+    }
+
+    .btn-main:active {
+      transform: scale(0.98);
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+      color: white;
+      box-shadow: 0 8px 24px rgba(13, 148, 136, 0.35);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .btn-start:hover {
+      background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+      box-shadow: 0 10px 28px rgba(13, 148, 136, 0.45);
+    }
+
+    .btn-pause {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      color: white;
+      box-shadow: 0 8px 24px rgba(217, 119, 6, 0.35);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+    }
+
+    .btn-pause:hover {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 10px 28px rgba(217, 119, 6, 0.45);
+    }
+
+    .btn-subtext {
+      font-size: 10px;
+      font-weight: 500;
+      opacity: 0.85;
+      letter-spacing: 0.2px;
+    }
+
+    /* Secondary action buttons */
+    .links-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .btn-secondary {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(71, 85, 105, 0.6);
+      color: #e2e8f0;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(51, 65, 85, 0.9);
+      border-color: #0d9488;
+      color: #5eead4;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-full {
+      grid-column: span 2;
+    }
+
+    /* Auto-open option checkbox */
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .option-row input {
+      accent-color: #0d9488;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    /* Console logs preview */
+    .terminal-box {
+      flex: 1;
+      min-height: 100px;
+      background: #020617;
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 10.5px;
+      color: #94a3b8;
+      overflow-y: auto;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .terminal-header {
+      font-size: 9.5px;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #64748b;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .terminal-content {
+      flex: 1;
+      overflow-y: auto;
+      word-break: break-all;
+    }
+
+    .log-line {
+      margin-bottom: 2px;
+    }
+    .log-info { color: #38bdf8; }
+    .log-success { color: #4ade80; }
+    .log-warn { color: #fbbf24; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="badge-icon">600</div>
+    <div class="title-group">
+      <h1>600 Lý Thuyết Lái Xe B2/C</h1>
+      <p>TikTok LIVE Interactive • macOS Launcher</p>
+    </div>
+  </div>
+
+  <!-- Status Card -->
+  <div class="status-card">
+    <div id="statusPill" class="status-pill status-stopped">
+      <span class="dot"></span>
+      <span id="statusLabel">SERVER CHƯA CHẠY</span>
+    </div>
+    <div class="url-text" id="urlText">http://lvh.me:3000</div>
+  </div>
+
+  <!-- Big Start / Pause Button -->
+  <div class="action-button-container">
+    <button id="btnMainAction" class="btn-main btn-start" onclick="toggleServer()">
+      <span id="mainBtnText">▶ START</span>
+      <span id="mainBtnSub" class="btn-subtext">Khởi động Server & Mở Chrome</span>
+    </button>
+  </div>
+
+  <!-- Quick Action Links -->
+  <div class="links-grid">
+    <button id="btnOpenDeck" class="btn-secondary" onclick="openDeck()" disabled>
+      <span>🌐 Mở Bảng Menu (Chrome)</span>
+    </button>
+    <button id="btnOpenStage" class="btn-secondary" onclick="openStage()" disabled>
+      <span>📺 Màn Live (Stage 9:16)</span>
+    </button>
+    <button id="btnCopyObs" class="btn-secondary btn-full" onclick="copyObsLink()">
+      <span id="copyObsText">📋 Copy Link OBS (?view=stage)</span>
+    </button>
+  </div>
+
+  <!-- Auto-open checkbox option -->
+  <label class="option-row">
+    <input type="checkbox" id="chkAutoOpen" checked>
+    <span>Tự động mở Google Chrome khi bấm START</span>
+  </label>
+
+  <!-- Terminal preview box -->
+  <div class="terminal-box">
+    <div class="terminal-header">
+      <span>Nhật ký máy chủ (Server Console)</span>
+      <span id="portStatus">Cổng: 3000</span>
+    </div>
+    <div class="terminal-content" id="logContent">
+      <div class="log-line">Sẵn sàng. Nhấn START để khởi động hệ thống.</div>
+    </div>
+  </div>
+
+  <script>
+    let isRunning = false;
+    let isStarting = false;
+
+    const btnMain = document.getElementById('btnMainAction');
+    const mainBtnText = document.getElementById('mainBtnText');
+    const mainBtnSub = document.getElementById('mainBtnSub');
+    const statusPill = document.getElementById('statusPill');
+    const statusLabel = document.getElementById('statusLabel');
+    const btnOpenDeck = document.getElementById('btnOpenDeck');
+    const btnOpenStage = document.getElementById('btnOpenStage');
+    const copyObsText = document.getElementById('copyObsText');
+    const chkAutoOpen = document.getElementById('chkAutoOpen');
+    const logContent = document.getElementById('logContent');
+
+    function appendLog(text, type = '') {
+      const line = document.createElement('div');
+      line.className = 'log-line ' + (type ? 'log-' + type : '');
+      const time = new Date().toLocaleTimeString();
+      line.textContent = `[${time}] ${text}`;
+      logContent.appendChild(line);
+      logContent.scrollTop = logContent.scrollHeight;
+    }
+
+    function updateUi(state) {
+      if (state === 'running') {
+        isRunning = true;
+        isStarting = false;
+        statusPill.className = 'status-pill status-running';
+        statusLabel.textContent = 'ĐANG CHẠY TRÊN CỔNG 3000';
+        btnMain.className = 'btn-main btn-pause';
+        mainBtnText.textContent = '⏸ PAUSE';
+        mainBtnSub.textContent = 'Nhấn để tạm dừng Server';
+        btnOpenDeck.disabled = false;
+        btnOpenStage.disabled = false;
+      } else if (state === 'starting') {
+        isStarting = true;
+        statusPill.className = 'status-pill status-starting';
+        statusLabel.textContent = 'ĐANG KHỞI ĐỘNG...';
+        btnMain.disabled = true;
+        mainBtnText.textContent = '⏳ ĐANG TẢI...';
+        mainBtnSub.textContent = 'Vui lòng chờ giây lát...';
+      } else {
+        isRunning = false;
+        isStarting = false;
+        btnMain.disabled = false;
+        statusPill.className = 'status-pill status-stopped';
+        statusLabel.textContent = 'SERVER CHƯA CHẠY';
+        btnMain.className = 'btn-main btn-start';
+        mainBtnText.textContent = '▶ START';
+        mainBtnSub.textContent = 'Khởi động Server & Mở Chrome';
+        btnOpenDeck.disabled = true;
+        btnOpenStage.disabled = true;
+      }
+    }
+
+    async function toggleServer() {
+      if (isStarting) return;
+
+      if (!isRunning) {
+        updateUi('starting');
+        appendLog('Đang khởi động Node server...', 'info');
+        const autoOpen = chkAutoOpen.checked;
+        const res = await window.launcherApi.startServer({ autoOpen });
+        if (res && res.success) {
+          updateUi('running');
+          appendLog('Server đã sẵn sàng trên http://lvh.me:3000', 'success');
+        } else {
+          updateUi('stopped');
+          appendLog('Không thể khởi động server: ' + (res?.error || 'Lỗi không xác định'), 'warn');
+        }
+      } else {
+        appendLog('Đang dừng Server...', 'warn');
+        await window.launcherApi.pauseServer();
+        updateUi('stopped');
+        appendLog('Server đã tạm dừng.', 'info');
+      }
+    }
+
+    function openDeck() {
+      window.launcherApi.openUrl('http://lvh.me:3000/');
+    }
+
+    function openStage() {
+      window.launcherApi.openUrl('http://lvh.me:3000/?view=stage');
+    }
+
+    function copyObsLink() {
+      window.launcherApi.copyText('http://lvh.me:3000/?view=stage');
+      copyObsText.textContent = '✅ Đã copy link OBS!';
+      setTimeout(() => {
+        copyObsText.textContent = '📋 Copy Link OBS (?view=stage)';
+      }, 2000);
+    }
+
+    // Listen to IPC events from main process
+    if (window.launcherApi) {
+      window.launcherApi.onServerStatus((status) => {
+        updateUi(status);
+      });
+      window.launcherApi.onServerLog((msg) => {
+        appendLog(msg.text, msg.type);
+      });
+    }
+  </script>
+</body>
+</html>
+
