@@ -99,6 +99,7 @@ const DEFAULT_DRIVING_SETTINGS = {
   zaloCourseIntervalMinutes: 3,
   zaloCourseText: '👉 Bấm vào Avatar / Trang cá nhân để lấy Zalo tư vấn học bằng lái B2/C trọn gói nhé cả nhà!',
   zaloContactPhone: '09xx.xxx.xxx',
+  enableRandomQuestions: false,
 };
 
 let currentDrivingSettings = { ...DEFAULT_DRIVING_SETTINGS };
@@ -152,7 +153,11 @@ export interface DrivingLiveSession {
   votes: UserVote[];
   recentVotes: UserVote[];
   leaderboard: LeaderboardUser[];
+  playedCount: number;
+  enableRandom: boolean;
 }
+
+const playedQuestionIndices: Set<number> = new Set<number>();
 
 let currentDrivingSession: DrivingLiveSession = {
   state: 'idle',
@@ -164,6 +169,8 @@ let currentDrivingSession: DrivingLiveSession = {
   votes: [],
   recentVotes: [],
   leaderboard: [],
+  playedCount: 1,
+  enableRandom: false,
 };
 
 let countdownInterval: NodeJS.Timeout | null = null;
@@ -186,6 +193,8 @@ function clearAllTimers() {
 }
 
 function broadcastSessionState() {
+  currentDrivingSession.playedCount = playedQuestionIndices.size;
+  currentDrivingSession.enableRandom = !!currentDrivingSettings.enableRandomQuestions;
   io.emit('session:state', currentDrivingSession);
   broadcastSSE('session', currentDrivingSession);
 }
@@ -331,6 +340,8 @@ function goToQuestion(index: number) {
   const safeIdx = Math.max(0, Math.min(questionsData.length - 1, index));
   clearAllTimers();
 
+  playedQuestionIndices.add(safeIdx);
+
   currentDrivingSession.state = 'running';
   currentDrivingSession.currentIndex = safeIdx;
   currentDrivingSession.phase = 'reading';
@@ -339,6 +350,8 @@ function goToQuestion(index: number) {
   currentDrivingSession.votes = [];
   currentDrivingSession.recentVotes = [];
   currentDrivingSession.updatedAt = Date.now();
+  currentDrivingSession.playedCount = playedQuestionIndices.size;
+  currentDrivingSession.enableRandom = !!currentDrivingSettings.enableRandomQuestions;
 
   broadcastSessionState();
   io.emit('votes:update', { votes: [], recentVotes: [] });
@@ -356,10 +369,35 @@ function goToQuestion(index: number) {
 }
 
 function nextQuestion() {
-  if (currentDrivingSession.currentIndex < questionsData.length - 1) {
-    goToQuestion(currentDrivingSession.currentIndex + 1);
+  if (currentDrivingSettings.enableRandomQuestions) {
+    // 1. Tìm các câu hỏi chưa đọc
+    const unplayed: number[] = [];
+    for (let i = 0; i < questionsData.length; i++) {
+      if (!playedQuestionIndices.has(i)) {
+        unplayed.push(i);
+      }
+    }
+
+    // 2. Nếu đã hoàn thành toàn bộ 600 câu -> Tự động reset và bắt đầu vòng random mới
+    if (unplayed.length === 0) {
+      console.log('[Server] 🎉 Đã đọc hết toàn bộ 600 câu hỏi! Tự động reset và bắt đầu vòng random mới.');
+      playedQuestionIndices.clear();
+      for (let i = 0; i < questionsData.length; i++) {
+        unplayed.push(i);
+      }
+      io.emit('session:random_cycle_reset', { totalQuestions: questionsData.length });
+    }
+
+    // 3. Bốc ngẫu nhiên 1 câu chưa đọc trong chu kỳ này
+    const randomIdx = unplayed[Math.floor(Math.random() * unplayed.length)];
+    goToQuestion(randomIdx);
   } else {
-    goToQuestion(0);
+    // Chế độ tuần tự
+    if (currentDrivingSession.currentIndex < questionsData.length - 1) {
+      goToQuestion(currentDrivingSession.currentIndex + 1);
+    } else {
+      goToQuestion(0);
+    }
   }
 }
 
@@ -827,6 +865,16 @@ io.on('connection', (socket) => {
   socket.on('cmd:reset_leaderboard', () => {
     currentDrivingSession.leaderboard = [];
     io.emit('leaderboard:update', { leaderboard: [] });
+  });
+
+  socket.on('cmd:reset_random', () => {
+    playedQuestionIndices.clear();
+    if (currentDrivingSession.currentIndex >= 0) {
+      playedQuestionIndices.add(currentDrivingSession.currentIndex);
+    }
+    currentDrivingSession.playedCount = playedQuestionIndices.size;
+    broadcastSessionState();
+    io.emit('session:random_cycle_reset', { totalQuestions: questionsData.length });
   });
 
   socket.on('cmd:simulate_vote', (data) => {

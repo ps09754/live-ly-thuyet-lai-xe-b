@@ -22,6 +22,7 @@ import {
   Heart,
   PhoneCall,
   GraduationCap,
+  Shuffle,
 } from 'lucide-react';
 import { socketService } from '../services/socketService';
 import {
@@ -38,6 +39,7 @@ import { drivingSoundEngine } from '../services/drivingSoundEngine';
 interface DrivingStreamerDeckProps {
   currentQuestion: DrivingQuestion;
   totalQuestions: number;
+  playedCount?: number;
   phase: GamePhase;
   timeLeft: number;
   sessionState: SessionState;
@@ -65,6 +67,7 @@ interface DrivingStreamerDeckProps {
 export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
   currentQuestion,
   totalQuestions,
+  playedCount = 1,
   phase,
   timeLeft,
   sessionState,
@@ -929,9 +932,48 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Navigation & Jump */}
         <div className="bg-slate-800/60 p-3 rounded-2xl border border-slate-700/60 space-y-2.5">
-          <span className="text-xs font-bold text-slate-300 block">
-            Câu {currentQuestion.id}/{totalQuestions}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-300">
+              Câu {currentQuestion.id}/{totalQuestions}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                onUpdateSettings({ enableRandomQuestions: !(settings.enableRandomQuestions ?? false) })
+              }
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+                settings.enableRandomQuestions
+                  ? 'bg-purple-600 text-white shadow-xs ring-1 ring-purple-400'
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700/60'
+              }`}
+              title="Bật: Tự động bốc ngẫu nhiên câu hỏi chưa đọc. Đọc hết 600 câu sẽ tự động reset vòng mới."
+            >
+              <Shuffle className="w-3 h-3" />
+              <span>{settings.enableRandomQuestions ? 'Random: BẬT' : 'Random: TẮT'}</span>
+            </button>
+          </div>
+
+          {/* Random Progress Indicator */}
+          {settings.enableRandomQuestions && (
+            <div className="flex items-center justify-between bg-purple-950/40 border border-purple-500/30 rounded-xl px-2.5 py-1.5 text-[11px]">
+              <span className="text-purple-300 font-medium flex items-center gap-1">
+                <span>🎲 Đã đọc:</span>
+                <b className="text-white font-bold">{playedCount || 1}</b>
+                <span>/{totalQuestions} câu</span>
+                <span className="text-purple-400/80 text-[10px] ml-1">
+                  (Còn {Math.max(0, totalQuestions - (playedCount || 1))} câu)
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => socketService.emit('cmd:reset_random')}
+                className="px-2 py-0.5 bg-purple-800/60 hover:bg-purple-700 text-purple-200 rounded-md text-[10px] font-bold transition-all border border-purple-400/30"
+                title="Bấm để xóa danh sách đã đọc và bắt đầu lại vòng random từ đầu"
+              >
+                🔄 Đặt lại vòng
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <button
               onClick={onPrevQuestion}

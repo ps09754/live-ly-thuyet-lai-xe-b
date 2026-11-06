@@ -96,6 +96,8 @@ export interface GameSettings {
   avatarSize?: 'small' | 'medium' | 'large'; // Kích cỡ
   avatarMedia?: 'gif' | 'image'; // GIF hoạt hình hay ảnh tĩnh
   enableAvatarSpeechBubble?: boolean; // Bong bóng thoại tương tác thông minh
+  // 4. Chế độ bốc câu hỏi ngẫu nhiên (Random 600 câu không trùng lặp)
+  enableRandomQuestions?: boolean;
 }
 
 export interface TikTokChatEvent {

@@ -60,6 +60,7 @@ export default function App() {
   const [timeLeft, setTimeLeft] = useState<number>(15);
   const [revealDelayLeft, setRevealDelayLeft] = useState<number>(3);
   const [isReading, setIsReading] = useState<boolean>(false);
+  const [playedCount, setPlayedCount] = useState<number>(1);
 
   const [votes, setVotes] = useState<UserVote[]>([]);
   const [recentVotes, setRecentVotes] = useState<UserVote[]>([]);
@@ -109,6 +110,7 @@ export default function App() {
         if (data.session.phase) setPhase(data.session.phase);
         if (typeof data.session.timeLeft === 'number') setTimeLeft(data.session.timeLeft);
         if (typeof data.session.revealDelayLeft === 'number') setRevealDelayLeft(data.session.revealDelayLeft);
+        if (typeof data.session.playedCount === 'number') setPlayedCount(data.session.playedCount);
         if (Array.isArray(data.session.votes)) setVotes(data.session.votes);
         if (Array.isArray(data.session.recentVotes)) setRecentVotes(data.session.recentVotes);
       }
@@ -131,6 +133,7 @@ export default function App() {
       if (session.phase) setPhase(session.phase);
       if (typeof session.timeLeft === 'number') setTimeLeft(session.timeLeft);
       if (typeof session.revealDelayLeft === 'number') setRevealDelayLeft(session.revealDelayLeft);
+      if (typeof session.playedCount === 'number') setPlayedCount(session.playedCount);
 
       if (session.state === 'paused' || session.state === 'ended') {
         if (stopTtsRef.current) {
@@ -530,6 +533,7 @@ export default function App() {
         <DrivingStreamerDeck
           currentQuestion={currentQuestion}
           totalQuestions={questions.length || 600}
+          playedCount={playedCount}
           phase={phase}
           timeLeft={timeLeft}
           sessionState={sessionState}
