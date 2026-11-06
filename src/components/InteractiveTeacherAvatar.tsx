@@ -183,21 +183,15 @@ export const InteractiveTeacherAvatar: React.FC<InteractiveTeacherAvatarProps> =
     },
   }[avatarSize];
 
-  // Dynamic Image Source:
-  // When speaking with audio: Use talking animation (talking gif or open mouth)
-  // When idle: Use breathing gif or static full png
-  const imgSrc = isSpeaking
-    ? avatarMedia === 'gif'
-      ? '/co-ngan-talking.gif'
-      : '/co-ngan-open.png'
-    : avatarMedia === 'gif'
-    ? '/co-ngan.gif'
-    : '/co-ngan-full.png';
+  // Image source:
+  // When audio/TTS is speaking: Smoothly switches to talking GIF (baked-in lip movements & gestures)
+  // When idle: Smoothly switches to idle GIF (gentle breathing, smiling closed mouth)
+  const imgSrc = isSpeaking ? '/co-ngan-talking.gif' : '/co-ngan-idle.gif';
 
   return (
     <div
       onClick={handleAvatarClick}
-      className="absolute bottom-2.5 left-2 z-25 flex flex-col items-center select-none cursor-pointer group"
+      className="absolute bottom-2 left-2 z-25 flex flex-col items-center select-none cursor-pointer group"
       style={{ filter: 'drop-shadow(0 6px 14px rgba(13, 148, 136, 0.28))' }}
       title="Nhấn để tương tác với Trợ Giảng AI"
     >
@@ -227,62 +221,20 @@ export const InteractiveTeacherAvatar: React.FC<InteractiveTeacherAvatarProps> =
         </div>
       )}
 
-      {/* Character Image Container with Floating Breathing or Talking Motion */}
-      <div className={`relative flex flex-col items-center ${isSpeaking ? 'animate-npc-talk' : 'animate-float-breathing'}`}>
-        <div className="relative">
-          <img
-            src={imgSrc}
-            alt={avatarName}
-            className={`${sizeStyles.width} h-auto object-contain transition-transform duration-300 group-hover:scale-105 active:scale-95`}
-            draggable={false}
-            onError={(e) => {
-              // Fallback to static png if gif fails
-              const target = e.target as HTMLImageElement;
-              if (!target.src.endsWith('co-ngan-full.png')) {
-                target.src = '/co-ngan-full.png';
-              }
-            }}
-          />
-
-          {/* Real-time Animated Lip-Sync Mouth Overlay: active whenever sound/TTS is speaking */}
-          {isSpeaking && (
-            <div
-              className="absolute pointer-events-none z-30 animate-mouth-talk"
-              style={{
-                top: '17.34%',
-                left: '44.07%',
-                transform: 'translate(-50%, -50%)',
-                width: '7.5%',
-                height: '1.8%',
-              }}
-            >
-              {/* Cute anime talking mouth flap SVG */}
-              <svg viewBox="0 0 12 7" className="w-full h-full overflow-visible">
-                {/* Dark ruby interior */}
-                <ellipse cx="6" cy="3.5" rx="5.5" ry="3" fill="#84202b" stroke="#5d141c" strokeWidth="0.5" />
-                {/* White teeth gleam */}
-                <path d="M 2 2 Q 6 3.5 10 2" stroke="#ffffff" strokeWidth="1" fill="none" opacity="0.9" />
-                {/* Tongue pink */}
-                <path d="M 3 4.5 Q 6 6.5 9 4.5" fill="#e75e72" />
-              </svg>
-            </div>
-          )}
-        </div>
-
-        {/* Name Badge */}
-        <div
-          className={`-mt-1 flex items-center justify-center gap-1 bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-600 text-white font-bold rounded-full shadow-md border border-white/60 backdrop-blur-sm ${sizeStyles.badgeText}`}
-        >
-          {/* Subtle live soundwave equalizer bars when reading / speaking */}
-          {isSpeaking && (
-            <div className="flex items-center gap-0.5 mr-0.5">
-              <span className="w-0.5 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-0.5 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-0.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-          )}
-          <span className="drop-shadow-sm truncate">{avatarName}</span>
-        </div>
+      {/* Character Image Container */}
+      <div className="relative flex flex-col items-center">
+        <img
+          src={imgSrc}
+          alt={avatarName}
+          className={`${sizeStyles.width} h-auto object-contain transition-transform duration-300 group-hover:scale-105 active:scale-95`}
+          draggable={false}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (!target.src.endsWith('co-ngan-character.png')) {
+              target.src = '/co-ngan-character.png';
+            }
+          }}
+        />
       </div>
     </div>
   );

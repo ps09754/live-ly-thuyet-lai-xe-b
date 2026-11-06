@@ -821,21 +821,10 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-slate-700/50">
-          <div className="space-y-1">
-            <span className="text-[11px] text-slate-400">Tên Trợ Giảng:</span>
-            <input
-              type="text"
-              value={settings.avatarName || 'Cô Ngân 💖'}
-              onChange={(e) => onUpdateSettings({ avatarName: e.target.value })}
-              className="w-full bg-slate-950 border border-slate-700 focus:border-pink-400 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none"
-              placeholder="Cô Ngân 💖"
-            />
-          </div>
-
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 border-t border-slate-700/50">
           <div className="space-y-1">
             <span className="text-[11px] text-slate-400">Kích thước hiển thị:</span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {[
                 { id: 'small', label: 'Nhỏ (80px)' },
                 { id: 'medium', label: 'Chuẩn (105px)' },
@@ -845,9 +834,9 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
                   key={s.id}
                   type="button"
                   onClick={() => onUpdateSettings({ avatarSize: s.id as any })}
-                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
                     (settings.avatarSize || 'medium') === s.id
-                      ? 'bg-pink-600 text-white'
+                      ? 'bg-pink-600 text-white shadow-xs'
                       : 'bg-slate-900 text-slate-400 hover:bg-slate-700'
                   }`}
                 >
@@ -857,47 +846,21 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
             </div>
           </div>
 
-          <div className="space-y-1">
-            <span className="text-[11px] text-slate-400">Định dạng hiển thị:</span>
-            <div className="flex items-center gap-1">
-              {[
-                { id: 'gif', label: 'GIF Sống động ✨' },
-                { id: 'image', label: 'Ảnh nét 🖼️' },
-              ].map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => onUpdateSettings({ avatarMedia: m.id as any })}
-                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                    (settings.avatarMedia || 'gif') === m.id
-                      ? 'bg-teal-600 text-white'
-                      : 'bg-slate-900 text-slate-400 hover:bg-slate-700'
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-2 pt-2 sm:pt-0">
+            <MessageSquare className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+            <span className="text-[11px] text-slate-300 font-medium">Bong bóng thoại:</span>
+            <button
+              type="button"
+              onClick={() => onUpdateSettings({ enableAvatarSpeechBubble: !(settings.enableAvatarSpeechBubble ?? true) })}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                (settings.enableAvatarSpeechBubble ?? true)
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-slate-700 text-slate-400'
+              }`}
+            >
+              {(settings.enableAvatarSpeechBubble ?? true) ? 'BẬT thoại' : 'TẮT thoại'}
+            </button>
           </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-3.5 h-3.5 text-teal-400" />
-            <span className="text-[11px] text-slate-300 font-medium">Bong bóng thoại thông minh:</span>
-            <span className="text-[10px] text-slate-500">(Tự động nhắc học viên comment, cổ vũ, cảm ơn khi có người vote)</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => onUpdateSettings({ enableAvatarSpeechBubble: !(settings.enableAvatarSpeechBubble ?? true) })}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
-              (settings.enableAvatarSpeechBubble ?? true)
-                ? 'bg-emerald-600 text-white'
-                : 'bg-slate-700 text-slate-400'
-            }`}
-          >
-            {(settings.enableAvatarSpeechBubble ?? true) ? 'BẬT thoại' : 'TẮT thoại'}
-          </button>
         </div>
       </div>
 
