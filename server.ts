@@ -157,7 +157,8 @@ export interface DrivingLiveSession {
   enableRandom: boolean;
 }
 
-const playedQuestionIndices: Set<number> = new Set<number>();
+const playedQuestionIndices: Set<number> = new Set<number>([0]);
+const questionHistory: number[] = [0];
 
 let currentDrivingSession: DrivingLiveSession = {
   state: 'idle',
@@ -335,12 +336,17 @@ function revealAnswer() {
   }
 }
 
-function goToQuestion(index: number) {
+function goToQuestion(index: number, addToHistory: boolean = true) {
   if (questionsData.length === 0) return;
   const safeIdx = Math.max(0, Math.min(questionsData.length - 1, index));
   clearAllTimers();
 
   playedQuestionIndices.add(safeIdx);
+  if (addToHistory) {
+    if (questionHistory.length === 0 || questionHistory[questionHistory.length - 1] !== safeIdx) {
+      questionHistory.push(safeIdx);
+    }
+  }
 
   currentDrivingSession.state = 'running';
   currentDrivingSession.currentIndex = safeIdx;
@@ -371,7 +377,7 @@ function goToQuestion(index: number) {
 function nextQuestion() {
   if (currentDrivingSettings.enableRandomQuestions) {
     // 1. Tìm các câu hỏi chưa đọc
-    const unplayed: number[] = [];
+    let unplayed: number[] = [];
     for (let i = 0; i < questionsData.length; i++) {
       if (!playedQuestionIndices.has(i)) {
         unplayed.push(i);
@@ -390,20 +396,30 @@ function nextQuestion() {
 
     // 3. Bốc ngẫu nhiên 1 câu chưa đọc trong chu kỳ này
     const randomIdx = unplayed[Math.floor(Math.random() * unplayed.length)];
-    goToQuestion(randomIdx);
+    console.log(`[Server] 🎲 [RANDOM] Bốc ngẫu nhiên câu: ${randomIdx + 1}/${questionsData.length} (Đã hoàn thành: ${playedQuestionIndices.size + 1}/${questionsData.length})`);
+    goToQuestion(randomIdx, true);
   } else {
     // Chế độ tuần tự
     if (currentDrivingSession.currentIndex < questionsData.length - 1) {
-      goToQuestion(currentDrivingSession.currentIndex + 1);
+      goToQuestion(currentDrivingSession.currentIndex + 1, true);
     } else {
-      goToQuestion(0);
+      goToQuestion(0, true);
     }
   }
 }
 
 function prevQuestion() {
+  if (currentDrivingSettings.enableRandomQuestions) {
+    if (questionHistory.length > 1) {
+      questionHistory.pop(); // Loại bỏ câu hiện tại
+      const prevIdx = questionHistory[questionHistory.length - 1];
+      console.log(`[Server] ⏪ [RANDOM] Trở về câu hỏi trước đó: ${prevIdx + 1}`);
+      goToQuestion(prevIdx, false);
+      return;
+    }
+  }
   if (currentDrivingSession.currentIndex > 0) {
-    goToQuestion(currentDrivingSession.currentIndex - 1);
+    goToQuestion(currentDrivingSession.currentIndex - 1, true);
   }
 }
 
@@ -857,8 +873,12 @@ io.on('connection', (socket) => {
       try {
         fs.writeFileSync(DRIVING_SETTINGS_FILE, JSON.stringify(currentDrivingSettings, null, 2));
       } catch {}
+      currentDrivingSession.enableRandom = !!currentDrivingSettings.enableRandomQuestions;
+      currentDrivingSession.playedCount = playedQuestionIndices.size;
+      broadcastSessionState();
       io.emit('settings:update', { settings: currentDrivingSettings });
       broadcastSSE('settings', currentDrivingSettings);
+      console.log(`[Server] ⚙️ Cập nhật cài đặt (Random: ${currentDrivingSettings.enableRandomQuestions ? 'BẬT' : 'TẮT'})`);
     }
   });
 
@@ -872,9 +892,14 @@ io.on('connection', (socket) => {
     if (currentDrivingSession.currentIndex >= 0) {
       playedQuestionIndices.add(currentDrivingSession.currentIndex);
     }
+    questionHistory.length = 0;
+    if (currentDrivingSession.currentIndex >= 0) {
+      questionHistory.push(currentDrivingSession.currentIndex);
+    }
     currentDrivingSession.playedCount = playedQuestionIndices.size;
     broadcastSessionState();
     io.emit('session:random_cycle_reset', { totalQuestions: questionsData.length });
+    console.log('[Server] 🔄 Đã đặt lại vòng câu hỏi Random');
   });
 
   socket.on('cmd:simulate_vote', (data) => {

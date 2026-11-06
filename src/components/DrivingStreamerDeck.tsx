@@ -167,48 +167,97 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
         </div>
       </div>
 
-      {/* 2. Primary Control Strip: BẮT ĐẦU, TẠM DỪNG / TIẾP TỤC, KẾT THÚC */}
+      {/* 2. Primary Control Strip: BẮT ĐẦU, TẠM DỪNG / TIẾP TỤC, KẾT THÚC & RANDOM */}
       <div className="bg-slate-800/90 p-4 rounded-2xl border border-slate-700/80 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <span
-              className={`w-2.5 h-2.5 rounded-full ${
-                sessionState === 'running'
-                  ? 'bg-emerald-500 animate-pulse'
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-extrabold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${
+                  sessionState === 'running'
+                    ? 'bg-emerald-500 animate-pulse'
+                    : sessionState === 'paused'
+                    ? 'bg-amber-500'
+                    : 'bg-slate-500'
+                }`}
+              />
+              TRẠNG THÁI PHIÊN:
+              <span
+                className={`ml-1 px-2.5 py-0.5 rounded-lg text-xs font-extrabold ${
+                  sessionState === 'running'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    : sessionState === 'paused'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    : 'bg-slate-700 text-slate-300'
+                }`}
+              >
+                {sessionState === 'running'
+                  ? 'ĐANG CHẠY'
                   : sessionState === 'paused'
-                  ? 'bg-amber-500'
-                  : 'bg-slate-500'
-              }`}
-            />
-            TRẠNG THÁI PHIÊN:
-            <span
-              className={`ml-1 px-2.5 py-0.5 rounded-lg text-xs font-extrabold ${
-                sessionState === 'running'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : sessionState === 'paused'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'bg-slate-700 text-slate-300'
-              }`}
-            >
-              {sessionState === 'running'
-                ? 'ĐANG CHẠY'
-                : sessionState === 'paused'
-                ? 'ĐANG TẠM DỪNG'
-                : 'CHƯA BẮT ĐẦU'}
+                  ? 'ĐANG TẠM DỪNG'
+                  : 'CHƯA BẮT ĐẦU'}
+              </span>
             </span>
-          </span>
+          </div>
 
-          <span className="text-xs text-slate-400">
-            {phase === 'reading' ? '🎙️ Đang đọc câu hỏi' : phase === 'countdown' ? `⏱️ Đếm ngược: ${timeLeft}s` : '🎉 Đã hiện đáp án'}
-          </span>
+          <div className="flex items-center gap-2.5">
+            {/* Nút Bật/Tắt Chế độ Random Câu Hỏi ngay trên thanh điều khiển chính */}
+            <button
+              type="button"
+              onClick={() =>
+                onUpdateSettings({ enableRandomQuestions: !(settings.enableRandomQuestions ?? false) })
+              }
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
+                settings.enableRandomQuestions
+                  ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-purple-500/30 ring-2 ring-purple-300'
+                  : 'bg-slate-700/80 hover:bg-slate-600 text-slate-300 border border-slate-600'
+              }`}
+              title="Bật: Tự động bốc ngẫu nhiên câu hỏi chưa đọc. Đọc hết 600 câu sẽ tự động reset vòng mới."
+            >
+              <Shuffle className={`w-3.5 h-3.5 ${settings.enableRandomQuestions ? 'animate-pulse' : ''}`} />
+              <span>{settings.enableRandomQuestions ? '🔀 Random: BẬT' : 'Random: TẮT'}</span>
+            </button>
+
+            <span className="text-xs text-slate-300 bg-slate-900/60 px-2.5 py-1 rounded-lg border border-slate-700/50">
+              {phase === 'reading' ? '🎙️ Đang đọc câu hỏi' : phase === 'countdown' ? `⏱️ Đếm ngược: ${timeLeft}s` : '🎉 Đã hiện đáp án'}
+            </span>
+          </div>
         </div>
+
+        {/* Thanh trạng thái Tiến độ Random khi BẬT */}
+        {settings.enableRandomQuestions && (
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-gradient-to-r from-purple-950/70 via-slate-900/80 to-purple-950/70 border border-purple-500/40 rounded-xl px-3.5 py-2 text-xs shadow-inner">
+            <div className="flex items-center gap-2">
+              <span className="text-purple-300 font-medium flex items-center gap-1.5">
+                <span>🎲 Tiến độ Random: Đã đọc</span>
+                <b className="px-2 py-0.5 rounded-md bg-purple-600 text-white font-extrabold text-xs shadow-xs">
+                  {playedCount || 1}
+                </b>
+                <span>/{totalQuestions} câu</span>
+                <span className="text-purple-300/80 text-[11px] ml-1">
+                  (Còn <b className="text-purple-200">{Math.max(0, totalQuestions - (playedCount || 1))}</b> câu chưa đọc)
+                </span>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => socketService.emit('cmd:reset_random')}
+              className="px-2.5 py-1 bg-purple-700/90 hover:bg-purple-600 active:scale-95 text-purple-100 rounded-lg text-xs font-bold transition-all border border-purple-400/40 shadow-xs flex items-center gap-1.5 cursor-pointer"
+              title="Bấm để xóa danh sách câu đã đọc và bắt đầu lại vòng random từ đầu"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Đặt lại vòng mới</span>
+            </button>
+          </div>
+        )}
 
         {/* Bộ điều khiển nhạc (Media Player Controls): CÂU TRƯỚC - BẮT ĐẦU / TẠM DỪNG / TIẾP TỤC - CÂU TIẾP */}
         <div className="flex items-center justify-center gap-3 pt-1">
           {/* Nút CÂU TRƯỚC (Prev) */}
           <button
             onClick={onPrevQuestion}
-            disabled={currentQuestion.id <= 1}
+            disabled={!settings.enableRandomQuestions && currentQuestion.id <= 1}
             className="flex-1 max-w-[160px] py-3.5 px-4 bg-slate-700/80 hover:bg-slate-700 active:scale-95 disabled:opacity-30 disabled:pointer-events-none text-white rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-slate-600/60 shadow-md transition-all cursor-pointer"
             title="Câu hỏi trước đó"
           >
@@ -249,12 +298,20 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
           {/* Nút CÂU KẾ TIẾP (Next) */}
           <button
             onClick={onNextQuestion}
-            disabled={currentQuestion.id >= totalQuestions}
-            className="flex-1 max-w-[160px] py-3.5 px-4 bg-slate-700/80 hover:bg-slate-700 active:scale-95 disabled:opacity-30 disabled:pointer-events-none text-white rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-slate-600/60 shadow-md transition-all cursor-pointer"
-            title="Câu hỏi kế tiếp"
+            disabled={!settings.enableRandomQuestions && currentQuestion.id >= totalQuestions}
+            className={`flex-1 max-w-[190px] py-3.5 px-4 active:scale-95 text-white rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer ${
+              settings.enableRandomQuestions
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 border border-purple-300 shadow-purple-500/25 ring-2 ring-purple-400/50'
+                : 'bg-slate-700/80 hover:bg-slate-700 border border-slate-600/60 disabled:opacity-30 disabled:pointer-events-none'
+            }`}
+            title={settings.enableRandomQuestions ? 'Bốc ngẫu nhiên câu kế tiếp chưa đọc' : 'Câu hỏi kế tiếp'}
           >
-            <span>CÂU TIẾP</span>
-            <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+            <span>{settings.enableRandomQuestions ? 'CÂU TIẾP (RANDOM)' : 'CÂU TIẾP'}</span>
+            {settings.enableRandomQuestions ? (
+              <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />
+            ) : (
+              <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+            )}
           </button>
         </div>
       </div>
@@ -936,44 +993,7 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
             <span className="text-xs font-bold text-slate-300">
               Câu {currentQuestion.id}/{totalQuestions}
             </span>
-            <button
-              type="button"
-              onClick={() =>
-                onUpdateSettings({ enableRandomQuestions: !(settings.enableRandomQuestions ?? false) })
-              }
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all ${
-                settings.enableRandomQuestions
-                  ? 'bg-purple-600 text-white shadow-xs ring-1 ring-purple-400'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700/60'
-              }`}
-              title="Bật: Tự động bốc ngẫu nhiên câu hỏi chưa đọc. Đọc hết 600 câu sẽ tự động reset vòng mới."
-            >
-              <Shuffle className="w-3 h-3" />
-              <span>{settings.enableRandomQuestions ? 'Random: BẬT' : 'Random: TẮT'}</span>
-            </button>
           </div>
-
-          {/* Random Progress Indicator */}
-          {settings.enableRandomQuestions && (
-            <div className="flex items-center justify-between bg-purple-950/40 border border-purple-500/30 rounded-xl px-2.5 py-1.5 text-[11px]">
-              <span className="text-purple-300 font-medium flex items-center gap-1">
-                <span>🎲 Đã đọc:</span>
-                <b className="text-white font-bold">{playedCount || 1}</b>
-                <span>/{totalQuestions} câu</span>
-                <span className="text-purple-400/80 text-[10px] ml-1">
-                  (Còn {Math.max(0, totalQuestions - (playedCount || 1))} câu)
-                </span>
-              </span>
-              <button
-                type="button"
-                onClick={() => socketService.emit('cmd:reset_random')}
-                className="px-2 py-0.5 bg-purple-800/60 hover:bg-purple-700 text-purple-200 rounded-md text-[10px] font-bold transition-all border border-purple-400/30"
-                title="Bấm để xóa danh sách đã đọc và bắt đầu lại vòng random từ đầu"
-              >
-                🔄 Đặt lại vòng
-              </button>
-            </div>
-          )}
           <div className="flex items-center gap-2">
             <button
               onClick={onPrevQuestion}

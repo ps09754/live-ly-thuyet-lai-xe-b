@@ -6,7 +6,7 @@
   "main": "electron/main.cjs",
   "scripts": {
     "setup": "npm install",
-    "dev": "tsx server.ts",
+    "dev": "tsx watch server.ts",
     "build": "vite build",
     "build:server": "esbuild server.ts --platform=node --bundle --format=cjs --outfile=dist-server/server.cjs --external:vite",
     "start": "tsx server.ts",
