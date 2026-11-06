@@ -37,6 +37,31 @@
       "public/**/*",
       ".data/**/*"
     ],
+    "win": {
+      "icon": "electron/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "600 Cau Ly Thuyet Lai Xe LIVE"
+    },
     "mac": {
       "icon": "electron/icon.icns",
       "target": [

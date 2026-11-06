@@ -162,16 +162,16 @@
       box-shadow: 0 10px 28px rgba(13, 148, 136, 0.45);
     }
 
-    .btn-pause {
-      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    .btn-stop {
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
       color: white;
-      box-shadow: 0 8px 24px rgba(217, 119, 6, 0.35);
-      border: 1px solid rgba(251, 191, 36, 0.4);
+      box-shadow: 0 8px 24px rgba(225, 29, 72, 0.35);
+      border: 1px solid rgba(251, 113, 133, 0.4);
     }
 
-    .btn-pause:hover {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-      box-shadow: 0 10px 28px rgba(217, 119, 6, 0.45);
+    .btn-stop:hover {
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+      box-shadow: 0 10px 28px rgba(225, 29, 72, 0.45);
     }
 
     .btn-subtext {
@@ -288,7 +288,7 @@
     <div class="badge-icon">600</div>
     <div class="title-group">
       <h1>600 Lý Thuyết Lái Xe B2/C</h1>
-      <p>TikTok LIVE Interactive • macOS Launcher</p>
+      <p>TikTok LIVE Interactive • Windows & macOS Launcher</p>
     </div>
   </div>
 
@@ -367,11 +367,12 @@
       if (state === 'running') {
         isRunning = true;
         isStarting = false;
+        btnMain.disabled = false;
         statusPill.className = 'status-pill status-running';
-        statusLabel.textContent = 'ĐANG CHẠY TRÊN CỔNG 3000';
-        btnMain.className = 'btn-main btn-pause';
-        mainBtnText.textContent = '⏸ PAUSE';
-        mainBtnSub.textContent = 'Nhấn để tạm dừng Server';
+        statusLabel.textContent = 'SERVER ĐANG CHẠY';
+        btnMain.className = 'btn-main btn-stop';
+        mainBtnText.textContent = '⏹ STOP';
+        mainBtnSub.textContent = 'Nhấn để dừng hệ thống (Tắt Server)';
         btnOpenDeck.disabled = false;
         btnOpenStage.disabled = false;
       } else if (state === 'starting') {
@@ -380,7 +381,7 @@
         statusLabel.textContent = 'ĐANG KHỞI ĐỘNG...';
         btnMain.disabled = true;
         mainBtnText.textContent = '⏳ ĐANG TẢI...';
-        mainBtnSub.textContent = 'Vui lòng chờ giây lát...';
+        mainBtnSub.textContent = 'Đang mở http://lvh.me:3000...';
       } else {
         isRunning = false;
         isStarting = false;

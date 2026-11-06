@@ -47,13 +47,17 @@ function stopRunningServer() {
   if (serverProcess) {
     try {
       sendServerLog('Đang tắt tiến trình máy chủ...', 'warn');
-      serverProcess.kill('SIGTERM');
-      setTimeout(() => {
-        if (serverProcess) {
-          try { serverProcess.kill('SIGKILL'); } catch {}
-          serverProcess = null;
-        }
-      }, 1500);
+      if (process.platform === 'win32') {
+        exec(`taskkill /pid ${serverProcess.pid} /T /F`, () => {});
+      } else {
+        serverProcess.kill('SIGTERM');
+        setTimeout(() => {
+          if (serverProcess) {
+            try { serverProcess.kill('SIGKILL'); } catch {}
+            serverProcess = null;
+          }
+        }, 1500);
+      }
     } catch (e) {
       console.warn('Error killing server process:', e);
     }
@@ -62,15 +66,28 @@ function stopRunningServer() {
 }
 
 function launchBrowser(url = APP_URL) {
-  // Ưu tiên mở bằng Google Chrome, nếu không có Chrome thì mở bằng trình duyệt mặc định
-  exec(`open -a "Google Chrome" "${url}"`, (err) => {
-    if (err) {
-      sendServerLog('Không tìm thấy Google Chrome, mở bằng trình duyệt mặc định...', 'info');
-      shell.openExternal(url);
-    } else {
-      sendServerLog(`Đã mở Google Chrome: ${url}`, 'success');
-    }
-  });
+  if (process.platform === 'win32') {
+    // Trên Windows: mở trực tiếp bằng Google Chrome, nếu không có Chrome thì mở bằng trình duyệt mặc định
+    exec(`start chrome "${url}"`, (err) => {
+      if (err) {
+        shell.openExternal(url);
+      } else {
+        sendServerLog(`Đã mở Google Chrome: ${url}`, 'success');
+      }
+    });
+  } else if (process.platform === 'darwin') {
+    // Trên macOS: mở bằng Google Chrome, nếu không có thì fallback sang shell.openExternal
+    exec(`open -a "Google Chrome" "${url}"`, (err) => {
+      if (err) {
+        sendServerLog('Không tìm thấy Google Chrome, mở bằng trình duyệt mặc định...', 'info');
+        shell.openExternal(url);
+      } else {
+        sendServerLog(`Đã mở Google Chrome: ${url}`, 'success');
+      }
+    });
+  } else {
+    shell.openExternal(url);
+  }
 }
 
 async function startServerProcess(options = {}) {
