@@ -183,10 +183,8 @@ export const InteractiveTeacherAvatar: React.FC<InteractiveTeacherAvatarProps> =
     },
   }[avatarSize];
 
-  // Image source:
-  // When audio/TTS is speaking: Smoothly switches to talking GIF (baked-in lip movements & gestures)
-  // When idle: Smoothly switches to idle GIF (gentle breathing, smiling closed mouth)
-  const imgSrc = isSpeaking ? '/co-ngan-talking.gif' : '/co-ngan-idle.gif';
+  // Image source with cache-busting to guarantee the browser immediately drops any old cached GIF with badge
+  const imgSrc = isSpeaking ? '/avatar-talking.gif?v=nobadge' : '/avatar-idle.gif?v=nobadge';
 
   return (
     <div
@@ -230,8 +228,8 @@ export const InteractiveTeacherAvatar: React.FC<InteractiveTeacherAvatarProps> =
           draggable={false}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            if (!target.src.endsWith('co-ngan-character.png')) {
-              target.src = '/co-ngan-character.png';
+            if (!target.src.includes('avatar-idle.gif')) {
+              target.src = '/avatar-idle.gif?v=nobadge';
             }
           }}
         />
