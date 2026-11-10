@@ -49,6 +49,7 @@ const DEFAULT_SETTINGS: GameSettings = {
   stageOffsetX: 0,
   stagePaddingTop: 80,
   stagePaddingBottom: 190,
+  tiktokUsername: '',
 };
 
 export default function App() {
@@ -448,6 +449,10 @@ export default function App() {
   // TikTok Live Connect / Disconnect API
   const handleConnectTikTok = useCallback(async (username: string) => {
     try {
+      if (typeof window !== 'undefined' && username) {
+        localStorage.setItem('driving_tiktok_user', username);
+      }
+      handleUpdateSettings({ tiktokUsername: username });
       setTikTokStatus((prev) => ({ ...prev, isConnecting: true, error: '' }));
       const res = await fetch('/api/tiktok/connect', {
         method: 'POST',

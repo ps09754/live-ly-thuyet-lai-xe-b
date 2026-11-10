@@ -40,19 +40,20 @@ export const DrivingQuestionCard: React.FC<DrivingQuestionCardProps> = ({
 
   // Super dense: 4 options with long text, image with 3/4 options, or very long text (e.g. Câu 16)
   const isSuperDense =
-    (optionsCount >= 4 && (totalChars > 260 || maxOptionLen > 80)) ||
+    (optionsCount >= 4 && (totalChars > 240 || maxOptionLen > 70)) ||
     (hasImage && optionsCount >= 3) ||
-    totalChars > 380 ||
-    maxOptionLen > 160;
+    (hasImage && Boolean(question.tip)) ||
+    totalChars > 340 ||
+    maxOptionLen > 140;
 
   // Dense: 4 options, or has image, or moderate text length
-  const isDense = isSuperDense || optionsCount >= 4 || totalChars > 180 || maxOptionLen > 65 || hasImage;
+  const isDense = isSuperDense || optionsCount >= 3 || totalChars > 140 || maxOptionLen > 50 || hasImage;
 
   return (
     <div className="w-full">
       <div
         className={`bg-white/95 backdrop-blur-xs rounded-2xl shadow-sm border border-slate-200/90 flex flex-col ${
-          isSuperDense ? 'p-2.5 gap-1.5' : isDense ? 'p-3 gap-2' : 'p-3.5 gap-2.5'
+          isSuperDense ? 'p-2 gap-1' : isDense ? 'p-2.5 gap-1.5' : 'p-3 gap-2'
         }`}
       >
         {/* Top Header Row (Chapter + Index + Audio button) */}
@@ -106,12 +107,12 @@ export const DrivingQuestionCard: React.FC<DrivingQuestionCardProps> = ({
 
         {/* Diagram / Image Section (centered, crisp, auto-scaled) */}
         {question.image && (
-          <div className="w-full flex justify-center py-1 bg-slate-50/80 rounded-xl border border-slate-100 overflow-hidden">
+          <div className="w-full flex justify-center py-0.5 bg-slate-50/80 rounded-xl border border-slate-100 overflow-hidden shrink-0">
             <img
               src={question.image}
               alt={`Hình minh họa câu ${question.id}`}
               className={`${
-                isSuperDense ? 'max-h-[90px]' : isDense ? 'max-h-[110px]' : 'max-h-[135px]'
+                isSuperDense ? 'max-h-[70px]' : isDense ? 'max-h-[82px]' : 'max-h-[100px]'
               } w-auto max-w-full object-contain rounded-lg shadow-2xs`}
               loading="eager"
             />

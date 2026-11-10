@@ -192,7 +192,7 @@ export const DrivingStage: React.FC<DrivingStageProps> = ({
         </div>
 
         {/* 2. Question Card (Main Focus) */}
-        <div className="w-full flex-1 min-h-0 z-10 flex flex-col justify-start pt-2 pb-2 overflow-y-auto no-scrollbar">
+        <div className="w-full flex-1 min-h-0 z-10 flex flex-col justify-start pt-1 pb-1 overflow-y-auto no-scrollbar">
           <DrivingQuestionCard
             question={question}
             totalQuestions={totalQuestions}

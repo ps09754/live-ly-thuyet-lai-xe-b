@@ -105,6 +105,7 @@ const DEFAULT_DRIVING_SETTINGS = {
   stagePaddingTop: 100,
   stagePaddingBottom: 220,
   showTikTokSafeZoneGuide: false,
+  tiktokUsername: '',
 };
 
 let currentDrivingSettings = { ...DEFAULT_DRIVING_SETTINGS };

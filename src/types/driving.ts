@@ -104,6 +104,7 @@ export interface GameSettings {
   stagePaddingTop?: number; // Căn lề trên (px: mặc định 100px)
   stagePaddingBottom?: number; // Căn lề dưới (px: mặc định 220px)
   showTikTokSafeZoneGuide?: boolean; // Bật/tắt đường viền mô phỏng khung cắt điện thoại TikTok
+  tiktokUsername?: string; // Lưu username TikTok của streamer để không phải nhập lại mỗi lần Live
 }
 
 export interface TikTokChatEvent {

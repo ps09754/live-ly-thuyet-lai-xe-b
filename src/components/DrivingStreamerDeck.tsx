@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Play,
   Pause,
@@ -89,7 +89,31 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
   onResetLeaderboard,
   onSimulateTestVote,
 }) => {
-  const [inputUsername, setInputUsername] = useState(tikTokStatus.username || '');
+  const [inputUsername, setInputUsername] = useState(() => {
+    return (
+      (typeof window !== 'undefined' ? localStorage.getItem('driving_tiktok_user') : '') ||
+      settings?.tiktokUsername ||
+      tikTokStatus?.username ||
+      ''
+    );
+  });
+
+  // Đồng bộ lại username nếu settings tải về sau hoặc tikTokStatus thay đổi
+  useEffect(() => {
+    if (!inputUsername && (settings?.tiktokUsername || tikTokStatus?.username)) {
+      setInputUsername(settings?.tiktokUsername || tikTokStatus?.username || '');
+    }
+  }, [settings?.tiktokUsername, tikTokStatus?.username]);
+
+  const handleConnect = () => {
+    const cleanUser = inputUsername.replace(/^@/, '').trim();
+    if (!cleanUser) return;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('driving_tiktok_user', cleanUser);
+    }
+    onUpdateSettings({ tiktokUsername: cleanUser });
+    onConnectTikTok(cleanUser);
+  };
   const [jumpInput, setJumpInput] = useState(String(currentQuestion.id));
   const [copiedLink, setCopiedLink] = useState(false);
   const [isPlayingTestVoice, setIsPlayingTestVoice] = useState(false);
@@ -894,8 +918,22 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
               type="text"
               value={inputUsername}
               onChange={(e) => {
-                setInputUsername(e.target.value);
-                localStorage.setItem('driving_tiktok_user', e.target.value);
+                const val = e.target.value.replace(/^@/, '').trim();
+                setInputUsername(val);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('driving_tiktok_user', val);
+                }
+              }}
+              onBlur={() => {
+                const val = inputUsername.replace(/^@/, '').trim();
+                if (val && val !== settings?.tiktokUsername) {
+                  onUpdateSettings({ tiktokUsername: val });
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !tikTokStatus.isConnected && inputUsername.trim()) {
+                  handleConnect();
+                }
               }}
               placeholder="username"
               className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-6 pr-2 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-teal-500"
@@ -911,10 +949,7 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
             </button>
           ) : (
             <button
-              onClick={() => {
-                localStorage.setItem('driving_tiktok_user', inputUsername);
-                onConnectTikTok(inputUsername);
-              }}
+              onClick={handleConnect}
               disabled={tikTokStatus.isConnecting || !inputUsername.trim()}
               className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all"
             >
