@@ -13,8 +13,6 @@ import { DrivingQuestionCard } from './DrivingQuestionCard';
 import { BottomCenterBadge } from './BottomCenterBadge';
 import { StageHeaderMarquee } from './StageHeaderMarquee';
 import { FloatingVoteBubbles } from './FloatingVoteBubbles';
-import { FloatingOverlayBanners } from './FloatingOverlayBanners';
-import { InteractiveTeacherAvatar } from './InteractiveTeacherAvatar';
 
 interface DrivingStageProps {
   question: DrivingQuestion;
@@ -206,9 +204,6 @@ export const DrivingStage: React.FC<DrivingStageProps> = ({
           />
         </div>
 
-        {/* 2.5. Floating Overlay Banners: Like & Follow / Zalo Course (Slim pill positioned at bottom, stays 3s) */}
-        {settings && <FloatingOverlayBanners settings={settings} />}
-
         {/* 3. Floating Bottom Center Badge (Floating Centered Countdown / Result) */}
         <div
           className="absolute left-0 right-0 flex justify-center z-30 pointer-events-none px-4"
@@ -226,18 +221,7 @@ export const DrivingStage: React.FC<DrivingStageProps> = ({
           />
         </div>
 
-        {/* 4. Interactive Teacher Avatar (Cô Ngân) at Bottom-Left with Safe Zone Padding */}
-        <InteractiveTeacherAvatar
-          settings={settings}
-          phase={phase}
-          isReading={isReading}
-          recentVotes={recentVotes}
-          timeLeft={timeLeft}
-          padX={padX}
-          padBottom={padBottom}
-        />
-
-        {/* 5. Floating Vote Bubbles on Bottom-Right */}
+        {/* 4. Floating Vote Bubbles on Bottom-Right */}
         <FloatingVoteBubbles recentVotes={recentVotes} padX={padX} padBottom={padBottom} />
 
         {/* 6. TikTok Mobile 19.5:9 Safe Zone Simulator Guide (Chỉ hiện khi streamer bật để căn chỉnh) */}
