@@ -100,6 +100,11 @@ const DEFAULT_DRIVING_SETTINGS = {
   zaloCourseText: '👉 Bấm vào Avatar / Trang cá nhân để lấy Zalo tư vấn học bằng lái B2/C trọn gói nhé cả nhà!',
   zaloContactPhone: '09xx.xxx.xxx',
   enableRandomQuestions: false,
+  stagePaddingX: 52,
+  stageOffsetX: 0,
+  stagePaddingTop: 100,
+  stagePaddingBottom: 220,
+  showTikTokSafeZoneGuide: false,
 };
 
 let currentDrivingSettings = { ...DEFAULT_DRIVING_SETTINGS };

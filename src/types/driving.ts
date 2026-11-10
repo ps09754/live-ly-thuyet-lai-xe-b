@@ -98,6 +98,12 @@ export interface GameSettings {
   enableAvatarSpeechBubble?: boolean; // Bong bóng thoại tương tác thông minh
   // 4. Chế độ bốc câu hỏi ngẫu nhiên (Random 600 câu không trùng lặp)
   enableRandomQuestions?: boolean;
+  // 5. Căn lề an toàn màn hình Live (Safe Zone Padding cho TikTok Mobile)
+  stagePaddingX?: number; // Căn lề ngang (px trên canvas 480: mặc định 52px cho màn 19.5:9)
+  stageOffsetX?: number; // Cân chỉnh lệch tâm ngang Trái/Phải (px: -40 đến +40, mặc định 0)
+  stagePaddingTop?: number; // Căn lề trên (px: mặc định 100px)
+  stagePaddingBottom?: number; // Căn lề dưới (px: mặc định 220px)
+  showTikTokSafeZoneGuide?: boolean; // Bật/tắt đường viền mô phỏng khung cắt điện thoại TikTok
 }
 
 export interface TikTokChatEvent {

@@ -45,6 +45,10 @@ const DEFAULT_SETTINGS: GameSettings = {
   zaloCourseIntervalMinutes: 3,
   zaloCourseText: '👉 Bấm vào Avatar / Trang cá nhân để lấy Zalo tư vấn học bằng lái B2/C trọn gói nhé cả nhà!',
   zaloContactPhone: '09xx.xxx.xxx',
+  stagePaddingX: 32,
+  stageOffsetX: 0,
+  stagePaddingTop: 80,
+  stagePaddingBottom: 190,
 };
 
 export default function App() {

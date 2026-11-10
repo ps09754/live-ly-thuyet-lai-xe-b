@@ -23,6 +23,7 @@ import {
   PhoneCall,
   GraduationCap,
   Shuffle,
+  Maximize2,
 } from 'lucide-react';
 import { socketService } from '../services/socketService';
 import {
@@ -385,6 +386,178 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
                 {label}
               </button>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 2.6. Safe Zone Padding Config (Căn lề an toàn màn hình Live tránh tràn viền điện thoại TikTok) */}
+      <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Maximize2 className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs font-bold text-slate-200">
+              Căn lề an toàn màn hình Live (Safe Zone Padding cho TikTok Mobile):
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Toggle Simulator Guide */}
+            <button
+              type="button"
+              onClick={() =>
+                onUpdateSettings({
+                  showTikTokSafeZoneGuide: !settings.showTikTokSafeZoneGuide,
+                })
+              }
+              className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                settings.showTikTokSafeZoneGuide
+                  ? 'bg-rose-600 text-white shadow-md ring-2 ring-rose-300 animate-pulse'
+                  : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+              }`}
+              title="Bật/Tắt đường viền nét đứt đỏ mô phỏng khung cắt điện thoại TikTok trên màn Live"
+            >
+              <span>{settings.showTikTokSafeZoneGuide ? '👁️ Đang hiện Khung An Toàn' : '👁️ Hiện Khung Cắt TikTok (Test)'}</span>
+            </button>
+
+            <span className="text-[11px] font-semibold text-slate-400">
+              Lề Ngang: <b className="text-emerald-400 font-bold">{settings.stagePaddingX ?? 32}px</b> • Lệch tâm:{' '}
+              <b className="text-cyan-400 font-bold">
+                {(settings.stageOffsetX ?? 0) === 0
+                  ? '0 (Giữa)'
+                  : (settings.stageOffsetX ?? 0) > 0
+                  ? `+${settings.stageOffsetX} (Phải)`
+                  : `${settings.stageOffsetX} (Trái)`}
+              </b>{' '}
+              • Trên: <b className="text-teal-400 font-bold">{settings.stagePaddingTop ?? 80}px</b> • Đáy:{' '}
+              <b className="text-amber-400 font-bold">{settings.stagePaddingBottom ?? 190}px</b>
+            </span>
+          </div>
+        </div>
+
+        {/* Quick Presets */}
+        <div className="flex items-center gap-2 flex-wrap pt-1">
+          <span className="text-[11px] font-medium text-slate-400">Chế độ mẫu:</span>
+          {[
+            { label: '📱 Chuẩn TikTok Điện Thoại (19.5:9) ⭐ Khuyên dùng', padX: 52, offsetX: 0, padTop: 100, padBottom: 220 },
+            { label: '📱 Siêu Rộng Rãi (Lề 60px)', padX: 60, offsetX: 0, padTop: 120, padBottom: 220 },
+            { label: '🎯 Vừa phải (Màn 16:9)', padX: 32, offsetX: 0, padTop: 80, padBottom: 180 },
+            { label: '🖥️ Toàn màn hình OBS Studio (Gọn)', padX: 12, offsetX: 0, padTop: 24, padBottom: 24 },
+          ].map(({ label, padX, offsetX, padTop, padBottom }) => {
+            const isSelected =
+              (settings.stagePaddingX ?? 32) === padX &&
+              (settings.stageOffsetX ?? 0) === offsetX &&
+              (settings.stagePaddingTop ?? 80) === padTop &&
+              (settings.stagePaddingBottom ?? 190) === padBottom;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() =>
+                  onUpdateSettings({
+                    stagePaddingX: padX,
+                    stageOffsetX: offsetX,
+                    stagePaddingTop: padTop,
+                    stagePaddingBottom: padBottom,
+                  })
+                }
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-300'
+                    : 'bg-slate-900 hover:bg-slate-700 text-slate-300 border border-slate-700/80'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sliders for precise custom adjustment */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2.5 border-t border-slate-700/60">
+          {/* 1. Lề ngang Trái & Phải */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-300 font-medium">Lề Ngang (Độ dày 2 bên):</span>
+              <span className="text-emerald-400 font-extrabold">{settings.stagePaddingX ?? 32}px</span>
+            </div>
+            <input
+              type="range"
+              min="8"
+              max="70"
+              step="2"
+              value={settings.stagePaddingX ?? 32}
+              onChange={(e) => onUpdateSettings({ stagePaddingX: parseInt(e.target.value, 10) })}
+              className="w-full accent-emerald-500 cursor-pointer"
+            />
+          </div>
+
+          {/* 2. Dịch tâm lệch Trái / Phải */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-300 font-medium">Dịch Trái ⟵ 0 ⟶ Phải:</span>
+              <span className="text-cyan-400 font-extrabold">
+                {(settings.stageOffsetX ?? 0) === 0
+                  ? '0px (Giữa)'
+                  : (settings.stageOffsetX ?? 0) > 0
+                  ? `+${settings.stageOffsetX}px (Phải)`
+                  : `${settings.stageOffsetX}px (Trái)`}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="range"
+                min="-40"
+                max="40"
+                step="2"
+                value={settings.stageOffsetX ?? 0}
+                onChange={(e) => onUpdateSettings({ stageOffsetX: parseInt(e.target.value, 10) })}
+                className="w-full accent-cyan-400 cursor-pointer"
+              />
+              {(settings.stageOffsetX ?? 0) !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => onUpdateSettings({ stageOffsetX: 0 })}
+                  className="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-[10px] text-slate-300 shrink-0"
+                  title="Đặt lại chính giữa"
+                >
+                  Giữa
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 3. Lề trên */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-300 font-medium">Lề Trên (Tránh thanh TikTok):</span>
+              <span className="text-teal-400 font-extrabold">{settings.stagePaddingTop ?? 80}px</span>
+            </div>
+            <input
+              type="range"
+              min="10"
+              max="140"
+              step="5"
+              value={settings.stagePaddingTop ?? 80}
+              onChange={(e) => onUpdateSettings({ stagePaddingTop: parseInt(e.target.value, 10) })}
+              className="w-full accent-teal-500 cursor-pointer"
+            />
+          </div>
+
+          {/* 4. Nâng lề đáy */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-300 font-medium">Nâng lề Đáy (Tránh Chat & Bio):</span>
+              <span className="text-amber-400 font-extrabold">{settings.stagePaddingBottom ?? 190}px</span>
+            </div>
+            <input
+              type="range"
+              min="10"
+              max="280"
+              step="5"
+              value={settings.stagePaddingBottom ?? 190}
+              onChange={(e) => onUpdateSettings({ stagePaddingBottom: parseInt(e.target.value, 10) })}
+              className="w-full accent-amber-500 cursor-pointer"
+            />
           </div>
         </div>
       </div>

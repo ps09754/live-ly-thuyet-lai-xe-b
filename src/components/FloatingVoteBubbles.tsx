@@ -3,6 +3,8 @@ import { UserVote } from '../types/driving';
 
 interface FloatingVoteBubblesProps {
   recentVotes: UserVote[];
+  padX?: number;
+  padBottom?: number;
 }
 
 interface ActiveBubble {
@@ -37,7 +39,7 @@ const OPTION_STYLES: Record<number, { bg: string; badge: string; label: string }
   },
 };
 
-export const FloatingVoteBubbles: React.FC<FloatingVoteBubblesProps> = ({ recentVotes }) => {
+export const FloatingVoteBubbles: React.FC<FloatingVoteBubblesProps> = ({ recentVotes, padX = 20, padBottom = 190 }) => {
   const [bubbles, setBubbles] = useState<ActiveBubble[]>([]);
   const lastProcessedTimeRef = useRef<number>(0);
 
@@ -74,7 +76,10 @@ export const FloatingVoteBubbles: React.FC<FloatingVoteBubblesProps> = ({ recent
   if (bubbles.length === 0) return null;
 
   return (
-    <div className="absolute bottom-20 right-3.5 z-40 pointer-events-none flex flex-col items-end gap-2 overflow-visible">
+    <div
+      className="absolute z-40 pointer-events-none flex flex-col items-end gap-2 overflow-visible"
+      style={{ right: `${Math.max(10, padX - 6)}px`, bottom: `${padBottom + 20}px` }}
+    >
       {bubbles.map((b) => {
         const style = OPTION_STYLES[b.option] || OPTION_STYLES[1];
         return (

@@ -11,6 +11,8 @@ interface InteractiveTeacherAvatarProps {
   isReading?: boolean;
   recentVotes?: UserVote[];
   timeLeft?: number;
+  padX?: number;
+  padBottom?: number;
 }
 
 const READING_PROMPTS = [
@@ -47,6 +49,8 @@ export const InteractiveTeacherAvatar: React.FC<InteractiveTeacherAvatarProps> =
   phase = 'question',
   isReading = false,
   recentVotes = [],
+  padX = 20,
+  padBottom = 18,
 }) => {
   const isEnabled = settings?.enableAvatar !== false; // Default true
   const avatarName = settings?.avatarName || 'Cô Ngân 💖';
@@ -189,8 +193,12 @@ export const InteractiveTeacherAvatar: React.FC<InteractiveTeacherAvatarProps> =
   return (
     <div
       onClick={handleAvatarClick}
-      className="absolute bottom-2 left-2 z-25 flex flex-col items-center select-none cursor-pointer group"
-      style={{ filter: 'drop-shadow(0 6px 14px rgba(13, 148, 136, 0.28))' }}
+      className="absolute z-25 flex flex-col items-center select-none cursor-pointer group"
+      style={{
+        left: `${Math.max(8, padX - 8)}px`,
+        bottom: `${Math.max(8, padBottom - 8)}px`,
+        filter: 'drop-shadow(0 6px 14px rgba(13, 148, 136, 0.28))',
+      }}
       title="Nhấn để tương tác với Trợ Giảng AI"
     >
       {/* Dynamic Floating Hearts when clicked */}

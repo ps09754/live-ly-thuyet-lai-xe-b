@@ -82,8 +82,11 @@ export const FloatingOverlayBanners: React.FC<FloatingOverlayBannersProps> = ({ 
   if (!activeBanner) return null;
 
   return (
-    // Đặt ở vị trí bottom-16 (ngay trên đồng hồ đếm ngược bottom-3.5), tuyệt đối không che nội dung câu hỏi
-    <div className="absolute bottom-16 left-0 right-0 flex justify-center z-40 px-3 pointer-events-none">
+    // Đặt nổi ngay phía trên đồng hồ đếm ngược, luôn nằm trong vùng nhìn thấy của điện thoại
+    <div
+      className="absolute left-0 right-0 flex justify-center z-40 px-3 pointer-events-none"
+      style={{ bottom: `${(settings.stagePaddingBottom ?? 190) + 48}px` }}
+    >
       {activeBanner === 'like_follow' && (
         <div className="animate-in fade-in slide-in-from-bottom-3 zoom-in-95 duration-300 max-w-[440px] w-auto bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 text-white py-1.5 px-3 rounded-full shadow-2xl border border-pink-300/50 backdrop-blur-md flex items-center gap-2">
           {/* Heart icon */}
