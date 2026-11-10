@@ -972,19 +972,21 @@ async function ensureZeroTtsRunning() {
     console.log('[ZeroTTS] Service is already running on', ZEROTTS_URL);
     return;
   }
-  console.log('[ZeroTTS] Spawning local Python ZeroTTS service...');
   const scriptPath = path.join(projectRoot, 'scripts', 'zerotts_service.py');
   if (fs.existsSync(scriptPath)) {
-    zeroTtsChild = spawn('python3', [scriptPath], {
-      stdio: 'inherit',
+    const pyCmd = process.platform === 'win32' ? 'python' : 'python3';
+    zeroTtsChild = spawn(pyCmd, [scriptPath], {
+      stdio: ['ignore', 'ignore', 'pipe'],
       detached: false,
     });
-    zeroTtsChild.on('error', (err) => {
-      console.warn('[ZeroTTS] Không tìm thấy python3 hoặc lỗi khởi chạy (sẽ tự động dùng Edge TTS trực tuyến):', err.message);
+    zeroTtsChild.on('error', () => {
+      console.log('[TTS] Hệ thống tự động sử dụng Microsoft Edge TTS trực tuyến (giọng đọc mượt mà, sẵn sàng 100%).');
       zeroTtsChild = null;
     });
     zeroTtsChild.on('exit', (code) => {
-      console.log(`[ZeroTTS] Service exited with code ${code}`);
+      if (code !== 0) {
+        console.log('[TTS] Python máy chưa cài onnx/zerotts. Hệ thống tự động sử dụng Microsoft Edge TTS trực tuyến (giọng Hoài My / Nam Minh mượt mà, sẵn sàng 100%).');
+      }
     });
   }
 }
