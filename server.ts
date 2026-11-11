@@ -477,13 +477,38 @@ app.get('/api/tiktok/status', (_req, res) => {
 });
 
 // Connect to TikTok Live room by username
+function parseTikTokUsername(raw: string): string {
+  let u = (raw || '').trim();
+  const urlMatch = u.match(/(?:tiktok\.com\/@|tiktok\.com\/live\/@?)([\w.-]+)/i);
+  if (urlMatch && urlMatch[1]) {
+    return urlMatch[1].trim();
+  }
+  return u.replace(/^[@/]+/, '').replace(/[/].*$/, '').trim();
+}
+
+function formatTikTokError(rawError: unknown, user: string): string {
+  const msg = rawError instanceof Error ? rawError.message : String(rawError || '');
+  const lower = msg.toLowerCase();
+
+  if (lower.includes('room id') || lower.includes('offline') || (lower.includes('not found') && lower.includes('room'))) {
+    return `Tài khoản @${user} hiện CHƯA PHÁT TRỰC TIẾP trên TikTok. Bạn cần bấm nút "Bắt đầu phát trực tiếp" (LIVE) trên TikTok trước, đợi phòng Live chạy rồi mới bấm Kết nối lại nhé!`;
+  }
+  if (lower.includes('user not found') || lower.includes('404')) {
+    return `Không tìm thấy tài khoản @${user}. Vui lòng kiểm tra lại chính xác ID TikTok (viết liền không dấu trong trang cá nhân)!`;
+  }
+  if (lower.includes('sign') || lower.includes('captcha') || lower.includes('blocked') || lower.includes('limit') || lower.includes('rate')) {
+    return `TikTok đang yêu cầu xác minh bảo mật hoặc tạm giới hạn IP. Bạn hãy đợi 1-2 phút hoặc chuyển mạng kết nối rồi thử lại!`;
+  }
+  return `Không thể kết nối với @${user}: ${msg}. Hãy đảm bảo kênh đang phát trực tiếp trên TikTok!`;
+}
+
 app.post('/api/tiktok/connect', async (req, res) => {
   const { username } = req.body;
   if (!username || typeof username !== 'string') {
     return res.status(400).json({ success: false, error: 'Thiếu tên tài khoản TikTok (username)' });
   }
 
-  const cleanUser = username.replace(/^@/, '').trim();
+  const cleanUser = parseTikTokUsername(username);
   if (!cleanUser) {
     return res.status(400).json({ success: false, error: 'Tên tài khoản không hợp lệ' });
   }
@@ -529,6 +554,7 @@ app.post('/api/tiktok/connect', async (req, res) => {
       };
       broadcastSSE('status', liveStats);
       broadcastSSE('connected', { username: cleanUser, roomId: state?.roomId });
+      io.emit('tiktok:status', liveStats);
     });
 
     conn.on(ControlEvent.DISCONNECTED, () => {
@@ -660,24 +686,26 @@ app.post('/api/tiktok/connect', async (req, res) => {
         });
       })
       .catch((err: unknown) => {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        console.error(`[TikTok LIVE] Connect error for @${cleanUser}:`, errMsg);
+        const friendlyMsg = formatTikTokError(err, cleanUser);
+        console.error(`[TikTok LIVE] Connect error for @${cleanUser}:`, friendlyMsg);
         liveStats.isConnecting = false;
         liveStats.isConnected = false;
-        liveStats.error = errMsg;
+        liveStats.error = friendlyMsg;
         broadcastSSE('status', liveStats);
-        return res.status(400).json({
+        io.emit('tiktok:status', liveStats);
+        return res.json({
           success: false,
-          error: `Không thể kết nối với @${cleanUser}: ${errMsg}. Hãy đảm bảo tài khoản đang bấm Phát trực tiếp (LIVE) trên TikTok!`,
+          error: friendlyMsg,
         });
       });
   } catch (err: unknown) {
-    const errMsg = err instanceof Error ? err.message : String(err);
+    const friendlyMsg = formatTikTokError(err, cleanUser);
     liveStats.isConnecting = false;
     liveStats.isConnected = false;
-    liveStats.error = errMsg;
+    liveStats.error = friendlyMsg;
     broadcastSSE('status', liveStats);
-    return res.status(500).json({ success: false, error: errMsg });
+    io.emit('tiktok:status', liveStats);
+    return res.json({ success: false, error: friendlyMsg });
   }
 });
 

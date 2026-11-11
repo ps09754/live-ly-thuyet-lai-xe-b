@@ -21,6 +21,7 @@ import {
   Gauge,
   Shuffle,
   Maximize2,
+  AlertCircle,
 } from 'lucide-react';
 import { socketService } from '../services/socketService';
 import {
@@ -888,75 +889,91 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
       </div>
 
       {/* 4. TikTok Live Connection */}
-      <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <Radio
-            className={`w-5 h-5 ${
-              tikTokStatus.isConnected ? 'text-emerald-400 animate-pulse' : 'text-slate-400'
-            }`}
-          />
-          <div>
-            <div className="text-xs font-bold text-white flex items-center gap-2">
-              <span>TikTok LIVE:</span>
-              <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                  tikTokStatus.isConnected
-                    ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'bg-slate-700 text-slate-400'
-                }`}
-              >
-                {tikTokStatus.isConnected ? `@${tikTokStatus.username} (Đã kết nối)` : 'Chưa kết nối'}
-              </span>
+      <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80 flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <Radio
+              className={`w-5 h-5 ${
+                tikTokStatus.isConnected ? 'text-emerald-400 animate-pulse' : 'text-slate-400'
+              }`}
+            />
+            <div>
+              <div className="text-xs font-bold text-white flex items-center gap-2">
+                <span>TikTok LIVE:</span>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                    tikTokStatus.isConnected
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : 'bg-slate-700 text-slate-400'
+                  }`}
+                >
+                  {tikTokStatus.isConnected ? `@${tikTokStatus.username} (Đã kết nối)` : 'Chưa kết nối'}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-44">
-            <span className="absolute left-2.5 top-2 text-xs text-slate-500 font-bold">@</span>
-            <input
-              type="text"
-              value={inputUsername}
-              onChange={(e) => {
-                const val = e.target.value.replace(/^@/, '').trim();
-                setInputUsername(val);
-                if (typeof window !== 'undefined') {
-                  localStorage.setItem('driving_tiktok_user', val);
-                }
-              }}
-              onBlur={() => {
-                const val = inputUsername.replace(/^@/, '').trim();
-                if (val && val !== settings?.tiktokUsername) {
-                  onUpdateSettings({ tiktokUsername: val });
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !tikTokStatus.isConnected && inputUsername.trim()) {
-                  handleConnect();
-                }
-              }}
-              placeholder="username"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-6 pr-2 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-teal-500"
-            />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-44">
+              <span className="absolute left-2.5 top-2 text-xs text-slate-500 font-bold">@</span>
+              <input
+                type="text"
+                value={inputUsername}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/^@/, '').trim();
+                  setInputUsername(val);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('driving_tiktok_user', val);
+                  }
+                }}
+                onBlur={() => {
+                  const val = inputUsername.replace(/^@/, '').trim();
+                  if (val && val !== settings?.tiktokUsername) {
+                    onUpdateSettings({ tiktokUsername: val });
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !tikTokStatus.isConnected && inputUsername.trim()) {
+                    handleConnect();
+                  }
+                }}
+                placeholder="username"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-6 pr-2 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-teal-500"
+              />
+            </div>
+
+            {tikTokStatus.isConnected ? (
+              <button
+                onClick={onDisconnectTikTok}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                Ngắt
+              </button>
+            ) : (
+              <button
+                onClick={handleConnect}
+                disabled={tikTokStatus.isConnecting || !inputUsername.trim()}
+                className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                {tikTokStatus.isConnecting ? 'Đang nối...' : 'Kết nối'}
+              </button>
+            )}
           </div>
-
-          {tikTokStatus.isConnected ? (
-            <button
-              onClick={onDisconnectTikTok}
-              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all"
-            >
-              Ngắt
-            </button>
-          ) : (
-            <button
-              onClick={handleConnect}
-              disabled={tikTokStatus.isConnecting || !inputUsername.trim()}
-              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all"
-            >
-              {tikTokStatus.isConnecting ? 'Đang nối...' : 'Kết nối'}
-            </button>
-          )}
         </div>
+
+        {/* Thông báo lỗi rõ ràng nếu không kết nối được */}
+        {tikTokStatus.error && !tikTokStatus.isConnected && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-1">
+              <p className="font-bold text-rose-300">Chưa thể kết nối phòng Live:</p>
+              <p className="text-rose-200/90 leading-relaxed text-[11px]">{tikTokStatus.error}</p>
+              <p className="text-[10.5px] text-slate-400 pt-1 border-t border-rose-500/20">
+                👉 <b>Lưu ý quan trọng:</b> Bạn phải bấm nút <b>"Bắt đầu phát trực tiếp" (Go LIVE)</b> trên TikTok LIVE Studio hoặc điện thoại trước, khi màn hình live đã chính thức phát thì mới bấm nút "Kết nối" ở đây nhé!
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 5. Navigation & Chapter Jump */}
