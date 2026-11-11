@@ -974,6 +974,22 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
             </div>
           </div>
         )}
+
+        {/* Tùy chọn nâng cao: Vượt chặn IP bằng Cookie Session ID (khi đổi máy / mạng khác bị chặn) */}
+        <div className="pt-2 border-t border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <span className="text-[11px]">🔑 Cookie Session ID (Tùy chọn - chỉ dùng khi đổi máy/mạng khác bị TikTok chặn IP):</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="password"
+              value={settings.tiktokSessionId || ''}
+              onChange={(e) => onUpdateSettings({ tiktokSessionId: e.target.value.trim() })}
+              placeholder="Dán cookie sessionid nếu bị chặn"
+              className="bg-slate-950 border border-slate-700 focus:border-teal-500 rounded-lg px-2.5 py-1 text-xs text-white w-56 font-mono"
+            />
+          </div>
+        </div>
       </div>
 
       {/* 5. Navigation & Chapter Jump */}

@@ -106,6 +106,7 @@ const DEFAULT_DRIVING_SETTINGS = {
   stagePaddingBottom: 220,
   showTikTokSafeZoneGuide: false,
   tiktokUsername: '',
+  tiktokSessionId: '',
 };
 
 let currentDrivingSettings = { ...DEFAULT_DRIVING_SETTINGS };
@@ -535,10 +536,13 @@ app.post('/api/tiktok/connect', async (req, res) => {
     };
     broadcastSSE('status', liveStats);
 
+    const sessionId = (req.body.sessionId || currentDrivingSettings.tiktokSessionId || process.env.TIKTOK_SESSION_ID || '').trim();
+
     const conn = new TikTokLiveConnection(cleanUser, {
       processInitialData: true,
       // The gift-list fetch behind this option needs a paid Euler Stream plan; gift events already carry name and diamonds
       enableExtendedGiftInfo: false,
+      ...(sessionId ? { session: { value: { sessionId } } } : {}),
     });
 
     conn.on(ControlEvent.CONNECTED, (state: { roomId?: string }) => {

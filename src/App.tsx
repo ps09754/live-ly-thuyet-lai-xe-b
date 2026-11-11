@@ -50,6 +50,7 @@ const DEFAULT_SETTINGS: GameSettings = {
   stagePaddingTop: 80,
   stagePaddingBottom: 190,
   tiktokUsername: '',
+  tiktokSessionId: '',
 };
 
 export default function App() {
@@ -457,7 +458,7 @@ export default function App() {
       const res = await fetch('/api/tiktok/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username, sessionId: settingsRef.current?.tiktokSessionId }),
       });
       const data = await res.json();
       if (!data.success) {
