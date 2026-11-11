@@ -1042,26 +1042,55 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
             </button>
           </div>
 
-          {/* Hướng dẫn chi tiết từng bước */}
+          {/* Hướng dẫn chi tiết từng bước & Các cách đơn giản hơn */}
           {showCookieGuide && (
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-teal-500/30 text-[11.5px] text-slate-300 space-y-2 leading-relaxed animate-in fade-in">
-              <p className="font-bold text-teal-300 flex items-center gap-1.5">
-                💡 3 bước cực nhanh để lấy mã Cookie sessionid:
-              </p>
-              <ol className="list-decimal list-inside space-y-1.5 text-slate-300 pl-1">
-                <li>
-                  Mở trình duyệt <b>Chrome</b> hoặc <b>Edge</b> trên máy tính, truy cập <a href="https://www.tiktok.com" target="_blank" rel="noreferrer" className="text-teal-400 underline font-medium">tiktok.com</a> (đảm bảo đang đăng nhập tài khoản Thầy Thoại).
-                </li>
-                <li>
-                  Bấm phím <b>F12</b> (hoặc click chuột phải ➔ chọn <b>Kiểm tra / Inspect</b>) ➔ Chọn tab <b>Application</b> (hoặc <b>Ứng dụng</b>).
-                </li>
-                <li>
-                  Ở menu bên trái: Bấm mục <b>Cookies</b> ➔ chọn <b>https://www.tiktok.com</b> ➔ Tìm dòng có cột Name là <code className="bg-slate-800 text-amber-300 px-1 py-0.5 rounded font-mono">sessionid</code> ➔ Click đúp vào cột <b>Value</b> để Copy toàn bộ chuỗi ký tự đó.
-                </li>
-              </ol>
-              <p className="text-[11px] text-emerald-400 font-medium pt-1 border-t border-slate-800">
-                👉 Dán mã vừa copy vào ô bên trên rồi bấm nút <b>"Thử lại"</b> (hoặc <b>"Kết nối"</b>). Mã sẽ được lưu tự động cho các lần live sau!
-              </p>
+            <div className="p-3.5 rounded-xl bg-slate-950/90 border border-teal-500/40 text-[11.5px] text-slate-300 space-y-3 leading-relaxed animate-in fade-in">
+              {/* Cách 1: Nút Dấu trang 1-Click (Siêu nhanh - không cần F12) */}
+              <div className="p-2.5 rounded-lg bg-teal-950/40 border border-teal-500/30 space-y-1.5">
+                <p className="font-bold text-teal-300 flex items-center gap-1.5">
+                  ⭐ Cách 1 (Nhanh nhất - 2 giây, không cần F12): Dùng nút Dấu trang 1-Click
+                </p>
+                <p className="text-slate-300 text-[11px]">
+                  Kéo nút màu vàng bên dưới thả lên <b>Thanh dấu trang (Bookmarks bar)</b> của Chrome:
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <a
+                    href="javascript:(function(){var m=document.cookie.match(/(?:^|;\s*)sessionid=([^;]+)/);if(m&amp;&amp;m[1]){navigator.clipboard.writeText(m[1]).then(function(){alert('🎉 ĐÃ COPY MÃ COOKIE TIKTOK THÀNH CÔNG!\n\nBây giờ bạn chỉ cần quay lại trang điều khiển, bấm Ctrl+V vào ô Cookie rồi bấm Thử lại nhé.');}).catch(function(){prompt('Mã Cookie sessionid của bạn (bấm Ctrl+C để copy):',m[1]);});}else{alert('❌ Không tìm thấy mã sessionid.\nHãy đảm bảo bạn đang ở trang tiktok.com và đã ĐĂNG NHẬP tài khoản!');}})();"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      alert('👉 Bạn hãy KÉO chuột giữ nút này rồi THẢ lên thanh Dấu trang (Bookmarks bar) của trình duyệt Chrome/Edge nhé!');
+                    }}
+                    title="Kéo nút này thả lên thanh Dấu trang Chrome"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs shadow-sm cursor-grab active:cursor-grabbing"
+                  >
+                    <span>⚡ Kéo nút này thả vào Dấu trang Chrome</span>
+                  </a>
+                </div>
+                <p className="text-[10.5px] text-slate-400">
+                  ➔ Mỗi khi vào <a href="https://www.tiktok.com" target="_blank" rel="noreferrer" className="text-teal-400 underline font-medium">tiktok.com</a>, chỉ cần <b>bấm 1 cái vào dấu trang đó</b> là mã Cookie tự động copy vào chuột, bạn chỉ việc quay lại đây ấn <kbd className="px-1 bg-slate-800 rounded font-mono text-white">Ctrl + V</kbd>!
+                </p>
+              </div>
+
+              {/* Cách 2: Cài tiện ích Cookie-Editor */}
+              <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-700/60 space-y-1">
+                <p className="font-bold text-amber-300">
+                  ⭐ Cách 2: Dùng tiện ích mở rộng "Cookie-Editor" (Rất phổ biến cho Streamer)
+                </p>
+                <p className="text-[11px] text-slate-300">
+                  1. Cài tiện ích miễn phí <a href="https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm" target="_blank" rel="noreferrer" className="text-teal-400 underline font-semibold">Cookie-Editor trên Chrome Store</a> (chỉ mất 5 giây).<br />
+                  2. Mở tab TikTok, bấm vào icon bánh Cookie trên góc Chrome ➔ Bấm nút <b>Export</b> (hoặc click icon copy cạnh dòng <code className="text-teal-300">sessionid</code>) ➔ Dán vào ô Cookie ở đây.
+                </p>
+              </div>
+
+              {/* Cách 3: Lấy thủ công bằng F12 */}
+              <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1 text-slate-400 text-[11px]">
+                <p className="font-semibold text-slate-300">
+                  ⭐ Cách 3: Lấy thủ công qua F12 (Không cần cài thêm gì):
+                </p>
+                <p>
+                  Vào <b>tiktok.com</b> ➔ Bấm <b>F12</b> ➔ Thẻ <b>Application</b> ➔ Mục <b>Cookies</b> (chọn tiktok.com) ➔ Copy giá trị ô <b>sessionid</b>.
+                </p>
+              </div>
             </div>
           )}
         </div>
