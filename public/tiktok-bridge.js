@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TikTok Live Chat Bridge -> Ôn Thi Lý Thuyết Lái Xe B2/C
 // @namespace    http://localhost:3000/
-// @version      1.0.0
+// @version      1.1.0
 // @description  Cầu nối trực tiếp bình luận TikTok Live vào ứng dụng Lái Xe (Vượt tường lửa 100%)
 // @match        https://www.tiktok.com/*
 // @grant        none
@@ -11,9 +11,12 @@
   'use strict';
 
   if (window.__TIKTOK_DRIVING_BRIDGE_LOADED__) {
-    console.log('[TikTok Bridge] Cầu nối đã được nạp trước đó.');
+    console.log('[TikTok Bridge] Cầu nối đã được nạp. Đang kích hoạt lại...');
     if (window.__TIKTOK_DRIVING_BRIDGE_SHOW__) {
       window.__TIKTOK_DRIVING_BRIDGE_SHOW__();
+    }
+    if (window.__TIKTOK_DRIVING_BRIDGE_RESCAN__) {
+      window.__TIKTOK_DRIVING_BRIDGE_RESCAN__();
     }
     return;
   }
@@ -22,17 +25,17 @@
   const SERVER_URL = 'http://localhost:3000';
   let isConnected = false;
   let bridgedCount = 0;
-  let lastCommentText = 'Chưa có bình luận mới';
+  let lastCommentText = 'Đang đợi bình luận...';
   let observer = null;
   let heartbeatTimer = null;
+  let scanTimer = null;
   let flushTimer = null;
   const pendingComments = [];
-  const processedNodes = new WeakSet();
-  const recentDeduplicationKeys = new Set();
+  const processedElements = new WeakSet();
 
-  console.log('[TikTok Bridge] 🚀 Đang khởi động Cầu nối TikTok Live -> Game Lái Xe...');
+  console.log('[TikTok Bridge v1.1] 🚀 Khởi động Cầu nối Live Chat -> Game Lái Xe...');
 
-  // 1. Tạo giao diện Floating HUD trên trang TikTok
+  // 1. Tạo HUD nổi hiển thị trạng thái trên trang TikTok
   const hud = document.createElement('div');
   hud.id = 'tiktok-driving-bridge-hud';
   hud.style.cssText = `
@@ -42,14 +45,14 @@
     z-index: 2147483647;
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(20, 184, 166, 0.5);
+    border: 1.5px solid rgba(20, 184, 166, 0.6);
     border-radius: 16px;
     padding: 14px 18px;
     color: #ffffff;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 13px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(20, 184, 166, 0.2);
-    width: 320px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(20, 184, 166, 0.25);
+    width: 330px;
     transition: all 0.25s ease;
     user-select: none;
   `;
@@ -59,10 +62,11 @@
       <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: #5eead4;">
         <span>🚗</span>
         <span>Cầu Nối Lái Xe B2/C</span>
+        <span style="font-size: 10px; background: rgba(20, 184, 166, 0.2); color: #2dd4bf; padding: 1px 6px; border-radius: 6px; font-weight: 600;">v1.1</span>
       </div>
       <div style="display: flex; gap: 6px;">
         <button id="tt-bridge-min-btn" title="Thu nhỏ" style="background: rgba(255,255,255,0.1); border: none; color: #fff; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center;">_</button>
-        <button id="tt-bridge-close-btn" title="Đóng cầu nối" style="background: rgba(244,63,94,0.2); border: none; color: #fda4af; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center;">✕</button>
+        <button id="tt-bridge-close-btn" title="Tắt cầu nối" style="background: rgba(244,63,94,0.2); border: none; color: #fda4af; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center;">✕</button>
       </div>
     </div>
 
@@ -73,18 +77,17 @@
 
     <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: #94a3b8;">
       <span>Bình luận đã chuyển:</span>
-      <span id="tt-bridge-count" style="font-weight: 700; color: #38bdf8;">0</span>
+      <span id="tt-bridge-count" style="font-weight: 700; color: #38bdf8; font-size: 14px;">0</span>
     </div>
 
-    <div style="font-size: 11px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 8px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+    <div style="font-size: 11px; background: rgba(0,0,0,0.35); padding: 7px 10px; border-radius: 8px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid rgba(255,255,255,0.06);">
       <span>Gần nhất: </span>
-      <span id="tt-bridge-last-msg" style="color: #f1f5f9; font-weight: 600;">(Đang đợi chat...)</span>
+      <span id="tt-bridge-last-msg" style="color: #5eead4; font-weight: 600;">(Đang đợi chat...)</span>
     </div>
   `;
 
   document.body.appendChild(hud);
 
-  // Widget thu nhỏ
   const miniBadge = document.createElement('div');
   miniBadge.id = 'tiktok-driving-bridge-mini';
   miniBadge.style.cssText = `
@@ -152,7 +155,16 @@
     if (lastMsgEl && lastMsg) lastMsgEl.textContent = lastMsg;
   }
 
-  // 2. Lấy thông tin kênh và số liệu phòng live
+  function flashHUDSuccess() {
+    hud.style.borderColor = '#10b981';
+    hud.style.boxShadow = '0 0 25px rgba(16, 185, 129, 0.4)';
+    setTimeout(() => {
+      hud.style.borderColor = 'rgba(20, 184, 166, 0.6)';
+      hud.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(20, 184, 166, 0.25)';
+    }, 400);
+  }
+
+  // 2. Lấy thông tin kênh
   function getStreamerUsername() {
     const m = window.location.pathname.match(/@([^/?#]+)/);
     if (m) return m[1];
@@ -172,7 +184,7 @@
     return 0;
   }
 
-  // 3. Gửi Heartbeat định kỳ
+  // 3. Heartbeat
   function sendHeartbeat() {
     fetch(`${SERVER_URL}/api/tiktok/bridge_heartbeat`, {
       method: 'POST',
@@ -184,11 +196,11 @@
       }),
     })
       .then((res) => res.json())
-      .then((data) => {
+      .then(() => {
         isConnected = true;
         updateHUD(true, bridgedCount, lastCommentText);
       })
-      .catch((err) => {
+      .catch(() => {
         isConnected = false;
         updateHUD(false, bridgedCount, 'Không thể gọi localhost:3000 (Hãy bật BAT-LIVE.bat)');
       });
@@ -197,7 +209,7 @@
   // 4. Gửi bình luận về Backend
   function flushPendingComments() {
     if (pendingComments.length === 0) return;
-    const batch = pendingComments.splice(0, 20);
+    const batch = pendingComments.splice(0, 30);
 
     fetch(`${SERVER_URL}/api/tiktok/bridge_comment`, {
       method: 'POST',
@@ -211,10 +223,11 @@
       .then((res) => res.json())
       .then(() => {
         isConnected = true;
+        flashHUDSuccess();
         updateHUD(true, bridgedCount, lastCommentText);
       })
       .catch((err) => {
-        console.warn('[TikTok Bridge] Lỗi gửi comment:', err);
+        console.warn('[TikTok Bridge] Lỗi gửi bình luận:', err);
       });
   }
 
@@ -222,168 +235,216 @@
     bridgedCount++;
     lastCommentText = `${commentData.nickname || commentData.username}: ${commentData.comment}`;
     updateHUD(isConnected, bridgedCount, lastCommentText);
-    console.log(`[TikTok Bridge] 💬 [${commentData.nickname || commentData.username}]: ${commentData.comment}`);
+    flashHUDSuccess();
+
+    console.log(
+      `%c[TikTok Bridge] 💬 [${commentData.nickname || commentData.username}]: ${commentData.comment}`,
+      'color: #10b981; font-weight: bold;'
+    );
 
     pendingComments.push(commentData);
     if (!flushTimer) {
       flushTimer = setTimeout(() => {
         flushTimer = null;
         flushPendingComments();
-      }, 150);
+      }, 100);
     }
   }
 
-  // 5. Trích xuất bình luận từ DOM Node của TikTok Live
-  function parseChatElement(el) {
-    if (!el || el.nodeType !== 1) return null;
-    if (processedNodes.has(el)) return null;
+  // 5. Trích xuất bình luận từ bất kỳ DOM Element nào của TikTok Live
+  const BADGE_REGEX = /^(chủ phòng|host|quản trị viên|moderator|hạng\s*\d+|top\s*\d+|người đăng ký|subscriber|bạn bè|fan cứng|cấp\s*\d+)$/i;
 
-    // Bỏ qua các thành phần của chính Bridge HUD
-    if (el.id && el.id.startsWith('tiktok-driving-bridge')) return null;
-    if (el.closest && el.closest('#tiktok-driving-bridge-hud, #tiktok-driving-bridge-mini')) return null;
+  function extractCommentFromRow(row) {
+    if (!row || row.nodeType !== 1) return null;
+    if (row.dataset && row.dataset.ttBridgeProcessed) return null;
+    if (processedElements.has(row)) return null;
 
-    // Tìm phần tử chứa tin nhắn
-    let itemEl = null;
+    if (row.id && row.id.startsWith('tiktok-driving-bridge')) return null;
+    if (row.closest && row.closest('#tiktok-driving-bridge-hud, #tiktok-driving-bridge-mini')) return null;
+
+    const rawText = (row.innerText || row.textContent || '').trim();
+    if (!rawText) return null;
+
+    // Bỏ qua các dòng thông báo hệ thống không chứa câu trả lời
+    const lower = rawText.toLowerCase();
     if (
-      (el.matches && (
-        el.matches('[data-e2e="chat-message"]') ||
-        el.matches('div[class*="ChatMessage"]') ||
-        el.matches('div[class*="chat-message"]') ||
-        el.matches('div[class*="CommentItem"]') ||
-        el.matches('div[class*="ChatItem"]') ||
-        el.matches('div[class*="chat-item"]') ||
-        el.matches('div[class*="DivItemContainer"]')
-      ))
+      lower.includes('đã tham gia') ||
+      lower.includes('joined') ||
+      lower.includes('đã theo dõi') ||
+      lower.includes('followed') ||
+      lower.includes('chia sẻ live') ||
+      lower.includes('shared the live') ||
+      lower.includes('nguyên tắc cộng đồng') ||
+      lower.includes('sáng tạo phải đủ 18') ||
+      lower.includes('community guidelines')
     ) {
-      itemEl = el;
-    } else if (el.querySelector) {
-      itemEl = el.querySelector(
-        '[data-e2e="chat-message"], div[class*="ChatMessage"], div[class*="chat-message"], div[class*="CommentItem"], div[class*="ChatItem"], div[class*="chat-item"], div[class*="DivItemContainer"]'
-      );
+      if (row.dataset) row.dataset.ttBridgeProcessed = '1';
+      processedElements.add(row);
+      return null;
     }
 
-    // Dự phòng: Nếu nằm trong khung chat và có thẻ user link
-    if (!itemEl && el.closest) {
-      const inChat = el.closest('[data-e2e="chat-room"], [class*="ChatRoom"], [class*="ChatList"], [class*="chat-list"], [class*="DivChat"]');
-      if (inChat && el.querySelector && el.querySelector('a[href*="/@"]')) {
-        itemEl = el;
-      }
-    }
+    // Tách dòng
+    const rawLines = rawText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0 && s !== '⋮' && s !== '...');
 
-    if (!itemEl) return null;
-    if (processedNodes.has(itemEl)) return null;
-    processedNodes.add(itemEl);
+    if (rawLines.length === 0) return null;
 
-    // Lấy thông tin Tên / Username
     let username = '';
     let nickname = '';
-    const userLink = itemEl.querySelector('a[href*="/@"]');
-    if (userLink) {
-      const href = userLink.getAttribute('href') || '';
-      const m = href.match(/@([^/?#]+)/);
-      if (m) username = m[1];
-      nickname = userLink.textContent.trim().replace(/^@/, '');
-    }
-
-    if (!username) {
-      const nameEl = itemEl.querySelector('[class*="UniqueId"], [class*="name"], [class*="Name"], [class*="Nickname"], [class*="author"]');
-      if (nameEl) {
-        username = nameEl.textContent.trim().replace(/^@/, '');
-        nickname = username;
-      }
-    }
-
-    // Lấy Avatar
+    let comment = '';
     let avatar = '';
-    const imgEl = itemEl.querySelector('img[src*="tiktok"], img[src*="byteoversea"], img');
-    if (imgEl && imgEl.src && !imgEl.src.includes('data:image/svg')) {
-      avatar = imgEl.src;
+
+    // Lấy avatar nếu có
+    const img = row.querySelector('img');
+    if (img && img.src && !img.src.includes('data:image/svg')) {
+      avatar = img.src;
     }
 
-    // Lấy nội dung comment
-    let text = '';
-    const textEl = itemEl.querySelector(
-      '[data-e2e="comment-text"], [data-e2e="chat-message-text"], [class*="Text"], [class*="text"], [class*="Message"], [class*="content"]'
-    );
-
-    if (textEl && textEl !== userLink) {
-      text = textEl.textContent.trim();
-    } else {
-      const fullText = (itemEl.innerText || itemEl.textContent || '').trim();
-      if (nickname && fullText.startsWith(nickname)) {
-        text = fullText.substring(nickname.length).replace(/^[:\s-]+/, '').trim();
+    if (rawLines.length === 1) {
+      const single = rawLines[0];
+      const colonIdx = single.indexOf(':');
+      if (colonIdx !== -1) {
+        username = single.substring(0, colonIdx).trim();
+        comment = single.substring(colonIdx + 1).trim();
       } else {
-        const parts = fullText.split(/[:\n]/);
-        if (parts.length >= 2) {
-          if (!username) username = parts[0].trim();
-          text = parts.slice(1).join(':').trim();
+        const voteMatch = single.match(/^(.*?)\s+([1-4])$/);
+        if (voteMatch) {
+          username = voteMatch[1].trim();
+          comment = voteMatch[2].trim();
+        } else if (/^[1-4]$/.test(single)) {
+          username = 'khach_live';
+          comment = single;
         } else {
-          text = fullText;
+          const parts = single.split(/\s+/);
+          if (parts.length >= 2) {
+            username = parts[0];
+            comment = parts.slice(1).join(' ');
+          } else {
+            comment = single;
+            username = 'khach_live';
+          }
+        }
+      }
+    } else {
+      // Dòng 1 là tên người dùng (lọc bỏ các danh hiệu ở cuối tên như Chủ phòng, Hạng 1...)
+      username = rawLines[0]
+        .replace(/\s*(chủ phòng|host|quản trị viên|moderator|hạng\s*\d+|top\s*\d+|người đăng ký).*$/i, '')
+        .trim();
+
+      // Dòng cuối là nội dung bình luận (nếu dòng cuối là badge thì lùi lại)
+      let commentIdx = rawLines.length - 1;
+      while (commentIdx > 0 && BADGE_REGEX.test(rawLines[commentIdx])) {
+        commentIdx--;
+      }
+      comment = rawLines[commentIdx > 0 ? commentIdx : rawLines.length - 1].trim();
+    }
+
+    username = username.replace(/^@/, '').trim();
+    nickname = username;
+    if (!username) username = 'khach_live';
+    if (!nickname) nickname = username;
+
+    if (!comment) return null;
+
+    // Đánh dấu đã xử lý phần tử này để không bị đọc lại
+    if (row.dataset) row.dataset.ttBridgeProcessed = '1';
+    processedElements.add(row);
+
+    return { username, nickname, comment, avatar };
+  }
+
+  // 6. Tìm tất cả các dòng chat đang có trên màn hình
+  function findVisibleChatRows() {
+    const rows = [];
+    const imgs = document.querySelectorAll('img');
+
+    for (const img of imgs) {
+      if (!img.src || img.src.includes('data:image/svg')) continue;
+      const rect = img.getBoundingClientRect();
+
+      // Avatar trong khung chat TikTok thường có kích thước 18px - 60px
+      if (rect.width >= 16 && rect.width <= 64 && rect.height >= 16 && rect.height <= 64) {
+        let p = img.parentElement;
+        let candidate = null;
+
+        for (let depth = 0; depth < 5 && p && p !== document.body; depth++) {
+          if (p.id && p.id.startsWith('tiktok-driving-bridge')) {
+            candidate = null;
+            break;
+          }
+          const txt = (p.innerText || '').trim();
+          if (txt.length > 0 && txt.length < 350) {
+            const r = p.getBoundingClientRect();
+            // Chiều cao một dòng chat đơn lẻ thường từ 18px đến 160px
+            if (r.height >= 18 && r.height <= 180) {
+              candidate = p;
+            }
+          }
+          p = p.parentElement;
+        }
+
+        if (candidate && !rows.includes(candidate)) {
+          rows.push(candidate);
         }
       }
     }
 
-    text = text.replace(/[\r\n]+/g, ' ').trim();
-    if (!text) return null;
+    return rows;
+  }
 
-    // Lọc các thông báo hệ thống không phải là câu trả lời (1, 2, 3, 4)
-    const lower = text.toLowerCase();
-    const isVoteOnly = /^[1-4]$/.test(text);
-    if (!isVoteOnly) {
-      if (
-        lower.includes('đã tham gia') ||
-        lower.includes('joined') ||
-        lower.includes('đã theo dõi') ||
-        lower.includes('followed') ||
-        lower.includes('chia sẻ live') ||
-        lower.includes('shared') ||
-        lower.includes('gửi quà') ||
-        lower.includes('sent')
-      ) {
-        return null;
+  // Quét toàn bộ khung chat để tìm bình luận mới chưa đọc
+  function scanAndProcessChat() {
+    const rows = findVisibleChatRows();
+    for (const row of rows) {
+      const data = extractCommentFromRow(row);
+      if (data) {
+        queueComment(data);
       }
     }
-
-    if (!username) username = 'khach_live';
-    if (!nickname) nickname = username;
-
-    // Chống trùng lặp tin nhắn trong 3 giây
-    const dedupKey = `${username}_${text}`;
-    if (recentDeduplicationKeys.has(dedupKey)) {
-      return null;
-    }
-    recentDeduplicationKeys.add(dedupKey);
-    setTimeout(() => {
-      recentDeduplicationKeys.delete(dedupKey);
-    }, 3000);
-
-    return { username, nickname, comment: text, avatar };
   }
 
-  // 6. Đánh dấu các tin nhắn cũ đang có trên màn hình để không gửi lại dồn dập
-  function markExistingMessages() {
-    const existing = document.querySelectorAll(
-      '[data-e2e="chat-message"], div[class*="ChatMessage"], div[class*="CommentItem"], div[class*="ChatItem"]'
-    );
-    existing.forEach((node) => {
-      processedNodes.add(node);
+  window.__TIKTOK_DRIVING_BRIDGE_RESCAN__ = scanAndProcessChat;
+
+  // Lệnh test thủ công trong Console: window.__TEST_BRIDGE__('hh3d', '1')
+  window.__TEST_BRIDGE__ = (user, msg) => {
+    queueComment({
+      username: user || 'hh3d',
+      nickname: user || 'hh3d',
+      comment: String(msg || '1'),
+      avatar: '',
     });
-    console.log(`[TikTok Bridge] Đã bỏ qua ${existing.length} tin nhắn cũ trước đó.`);
-  }
+  };
 
-  // 7. Khởi tạo MutationObserver theo dõi tin nhắn mới
+  // 7. Khởi tạo quan sát và chu kỳ quét
   function startObserver() {
-    markExistingMessages();
+    // Quét ngay các tin nhắn đang có trên màn hình
+    scanAndProcessChat();
 
+    // 1. Quét định kỳ mỗi 500ms (Fail-safe đảm bảo không bao giờ sót bình luận)
+    scanTimer = setInterval(scanAndProcessChat, 500);
+
+    // 2. MutationObserver lắng nghe DOM theo thời gian thực (0ms)
     observer = new MutationObserver((mutations) => {
       for (const mut of mutations) {
         if (mut.addedNodes && mut.addedNodes.length > 0) {
           for (let i = 0; i < mut.addedNodes.length; i++) {
             const node = mut.addedNodes[i];
             if (node.nodeType === 1) {
-              const chatData = parseChatElement(node);
-              if (chatData) {
-                queueComment(chatData);
+              const data = extractCommentFromRow(node);
+              if (data) {
+                queueComment(data);
+              } else {
+                // Kiểm tra xem node có chứa avatar img bên trong không
+                const innerImgs = node.querySelectorAll ? node.querySelectorAll('img') : [];
+                if (innerImgs.length > 0 && innerImgs.length <= 4) {
+                  const subRows = findVisibleChatRows();
+                  for (const sub of subRows) {
+                    const subData = extractCommentFromRow(sub);
+                    if (subData) queueComment(subData);
+                  }
+                }
               }
             }
           }
@@ -396,14 +457,17 @@
       subtree: true,
     });
 
-    console.log('[TikTok Bridge] ✅ Đã kích hoạt MutationObserver theo dõi Live Chat.');
+    console.log('[TikTok Bridge v1.1] ✅ Đã kích hoạt cả MutationObserver + Quét chu kỳ 500ms!');
   }
 
-  // 8. Dọn dẹp cầu nối khi streamer tắt
   function destroyBridge() {
     if (observer) {
       observer.disconnect();
       observer = null;
+    }
+    if (scanTimer) {
+      clearInterval(scanTimer);
+      scanTimer = null;
     }
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer);
@@ -413,17 +477,12 @@
       clearTimeout(flushTimer);
       flushTimer = null;
     }
-    if (hud && hud.parentNode) {
-      hud.parentNode.removeChild(hud);
-    }
-    if (miniBadge && miniBadge.parentNode) {
-      miniBadge.parentNode.removeChild(miniBadge);
-    }
+    if (hud && hud.parentNode) hud.parentNode.removeChild(hud);
+    if (miniBadge && miniBadge.parentNode) miniBadge.parentNode.removeChild(miniBadge);
     window.__TIKTOK_DRIVING_BRIDGE_LOADED__ = false;
     console.log('[TikTok Bridge] Đã tắt cầu nối.');
   }
 
-  // Bắt đầu
   sendHeartbeat();
   heartbeatTimer = setInterval(sendHeartbeat, 4000);
   startObserver();
