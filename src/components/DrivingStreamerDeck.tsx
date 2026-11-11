@@ -28,6 +28,7 @@ import {
   ChevronDown,
   ChevronUp,
   Key,
+  Link2,
 } from 'lucide-react';
 import { socketService } from '../services/socketService';
 import {
@@ -130,6 +131,14 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
   const [isPlayingTestVoice, setIsPlayingTestVoice] = useState(false);
   const [showCookieGuide, setShowCookieGuide] = useState(false);
   const [showSessionId, setShowSessionId] = useState(false);
+  const [connectMode, setConnectMode] = useState<'username' | 'link'>('username');
+  const [inputLink, setInputLink] = useState('');
+
+  const handleConnectLink = () => {
+    const cleanLink = inputLink.trim();
+    if (!cleanLink) return;
+    onConnectTikTok(cleanLink);
+  };
 
   const BOOKMARKLET_CODE = `javascript:(function(){var m=document.cookie.match(/(?:^|;\\s*)sessionid=([^;]+)/);if(m&&m[1]){navigator.clipboard.writeText(m[1]).then(function(){alert('🎉 ĐÃ COPY MÃ COOKIE TIKTOK THÀNH CÔNG!\\n\\nBây giờ bạn chỉ cần quay lại trang điều khiển, bấm Ctrl+V vào ô Cookie rồi bấm Thử lại nhé.');}).catch(function(){prompt('Mã Cookie sessionid của bạn (bấm Ctrl+C để copy):',m[1]);});}else{alert('❌ Không tìm thấy mã sessionid.\\nHãy đảm bảo bạn đang ở trang tiktok.com và đã ĐĂNG NHẬP tài khoản!');}})();`;
 
@@ -906,52 +915,73 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
 
       {/* 4. TikTok Live Connection */}
       <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/80 flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        {/* Hàng tiêu đề & Chọn cách kết nối */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-slate-700/60">
+          <div className="flex items-center gap-2.5">
             <Radio
               className={`w-5 h-5 ${
                 tikTokStatus.isConnected ? 'text-emerald-400 animate-pulse' : 'text-slate-400'
               }`}
             />
-            <div>
-              <div className="text-xs font-bold text-white flex items-center gap-2">
-                <span>TikTok LIVE:</span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                    tikTokStatus.isConnected
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'bg-slate-700 text-slate-400'
-                  }`}
-                >
-                  {tikTokStatus.isConnected ? `@${tikTokStatus.username} (Đã kết nối)` : 'Chưa kết nối'}
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white">TikTok LIVE:</span>
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  tikTokStatus.isConnected
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : 'bg-slate-700 text-slate-400'
+                }`}
+              >
+                {tikTokStatus.isConnected ? `@${tikTokStatus.username} (Đã kết nối)` : 'Chưa kết nối'}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-72">
-              {!isUrlOrRoomId && (
-                <span className="absolute left-2.5 top-2 text-xs text-slate-500 font-bold select-none">@</span>
-              )}
+          {/* Tab chọn cách kết nối: Tên kênh (@username) hoặc Link chia sẻ (Cách 3) */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-700">
+            <button
+              type="button"
+              onClick={() => setConnectMode('username')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                connectMode === 'username'
+                  ? 'bg-teal-600 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              👤 Tên kênh (@username)
+            </button>
+            <button
+              type="button"
+              onClick={() => setConnectMode('link')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                connectMode === 'link'
+                  ? 'bg-indigo-600 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Link2 className="w-3.5 h-3.5" />
+              <span>🔗 Dán Link Live (Cách 3)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Khung nhập tương ứng theo Mode đã chọn */}
+        {connectMode === 'username' ? (
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-2.5 top-2 text-xs text-slate-500 font-bold select-none">@</span>
               <input
                 type="text"
                 value={inputUsername}
                 onChange={(e) => {
-                  let val = e.target.value.trim();
-                  if (!val.startsWith('http')) {
-                    val = val.replace(/^@/, '');
-                  }
+                  const val = e.target.value.replace(/^@/, '').trim();
                   setInputUsername(val);
                   if (typeof window !== 'undefined') {
                     localStorage.setItem('driving_tiktok_user', val);
                   }
                 }}
                 onBlur={() => {
-                  let val = inputUsername.trim();
-                  if (!val.startsWith('http')) {
-                    val = val.replace(/^@/, '');
-                  }
+                  const val = inputUsername.replace(/^@/, '').trim();
                   if (val && val !== settings?.tiktokUsername) {
                     onUpdateSettings({ tiktokUsername: val });
                   }
@@ -961,17 +991,15 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
                     handleConnect();
                   }
                 }}
-                placeholder="ID kênh / dán Link chia sẻ Live / Room ID"
-                className={`w-full bg-slate-950 border border-slate-700 rounded-xl ${
-                  isUrlOrRoomId ? 'pl-3' : 'pl-6'
-                } pr-2 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-teal-500 placeholder:text-slate-500`}
+                placeholder="Nhập username TikTok (ví dụ: thaythoaidaylaixe.oto)"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-6 pr-2 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-teal-500 placeholder:text-slate-500"
               />
             </div>
 
             {tikTokStatus.isConnected ? (
               <button
                 onClick={onDisconnectTikTok}
-                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all"
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shrink-0"
               >
                 Ngắt
               </button>
@@ -979,13 +1007,53 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
               <button
                 onClick={handleConnect}
                 disabled={tikTokStatus.isConnecting || !inputUsername.trim()}
-                className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all"
+                className="px-4 py-1.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shrink-0"
               >
                 {tikTokStatus.isConnecting ? 'Đang nối...' : 'Kết nối'}
               </button>
             )}
           </div>
-        </div>
+        ) : (
+          <div className="space-y-1.5 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Link2 className="absolute left-2.5 top-2 w-3.5 h-3.5 text-indigo-400" />
+                <input
+                  type="text"
+                  value={inputLink}
+                  onChange={(e) => setInputLink(e.target.value.trim())}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !tikTokStatus.isConnected && inputLink.trim()) {
+                      handleConnectLink();
+                    }
+                  }}
+                  placeholder="Dán đường link copy từ TikTok LIVE Studio vào đây..."
+                  className="w-full bg-slate-950 border border-indigo-500/60 focus:border-indigo-400 rounded-xl pl-8 pr-2 py-1.5 text-xs font-semibold text-white focus:outline-none placeholder:text-slate-500 font-mono"
+                />
+              </div>
+
+              {tikTokStatus.isConnected ? (
+                <button
+                  onClick={onDisconnectTikTok}
+                  className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shrink-0"
+                >
+                  Ngắt
+                </button>
+              ) : (
+                <button
+                  onClick={handleConnectLink}
+                  disabled={tikTokStatus.isConnecting || !inputLink.trim()}
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shrink-0 shadow-md shadow-indigo-600/30"
+                >
+                  {tikTokStatus.isConnecting ? 'Đang nối...' : 'Kết nối bằng Link'}
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-indigo-300/90 flex items-center gap-1.5 pl-1">
+              👉 <b>Cách lấy link:</b> Trong TikTok LIVE Studio ➔ bấm nút mũi tên <b>Chia sẻ `➡️`</b> (hoặc icon 🔗) ở góc dưới màn hình xem trước ➔ Chọn <b>Sao chép liên kết</b> ➔ Dán vào ô này rồi bấm <b>"Kết nối bằng Link"</b>!
+            </p>
+          </div>
+        )}
 
         {/* Thông báo lỗi rõ ràng nếu không kết nối được */}
         {tikTokStatus.error && !tikTokStatus.isConnected && (
