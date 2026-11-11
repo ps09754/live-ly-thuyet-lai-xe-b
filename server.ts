@@ -549,14 +549,17 @@ function formatTikTokError(rawError: unknown, user: string): string {
   const msg = rawError instanceof Error ? rawError.message : String(rawError || '');
   const lower = msg.toLowerCase();
 
-  if (lower.includes('room id') || lower.includes('offline') || (lower.includes('not found') && lower.includes('room'))) {
-    return `Chưa thể lấy thông tin phòng Live @${user}. Khả năng cao do TikTok kích hoạt Tường lửa chống bot (WAF Challenge). Hãy dán Cookie sessionid (lấy từ TikTok web) vào ô "Cookie Session ID" bên dưới rồi bấm Kết nối lại nhé!`;
+  if (lower.includes("isn't online") || lower.includes('offline') || lower.includes('ended')) {
+    return `Kênh @${user} hiện ĐÃ TẮT LIVE hoặc chưa bấm "Bắt đầu phát" trên TikTok LIVE Studio. Hãy kiểm tra màn hình TikTok LIVE Studio đảm bảo đang đếm giờ phát rồi thử lại!`;
+  }
+  if (lower.includes('room id') || (lower.includes('not found') && lower.includes('room'))) {
+    return `Chưa thể lấy thông tin phòng Live @${user}. Khả năng do phòng live chưa mở hoặc mã Cookie sessionid chưa chính xác (mã thật là chuỗi 32 ký tự). Hãy kiểm tra lại kênh đang phát và mã cookie nhé!`;
   }
   if (lower.includes('user not found') || lower.includes('404')) {
     return `Không tìm thấy tài khoản @${user}. Vui lòng kiểm tra lại chính xác ID TikTok (viết liền không dấu trong trang cá nhân)!`;
   }
   if (lower.includes('sign') || lower.includes('captcha') || lower.includes('blocked') || lower.includes('limit') || lower.includes('rate')) {
-    return `TikTok đang yêu cầu xác minh bảo mật hoặc tạm giới hạn IP. Bạn hãy dán Cookie sessionid vào ô bên dưới rồi thử lại!`;
+    return `TikTok đang yêu cầu xác minh bảo mật hoặc tạm giới hạn IP. Bạn hãy dán Cookie sessionid chuẩn rồi thử lại!`;
   }
   return `Không thể kết nối với @${user}: ${msg}.`;
 }

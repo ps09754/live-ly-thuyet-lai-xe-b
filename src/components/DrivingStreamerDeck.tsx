@@ -1078,9 +1078,15 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
                 Cookie Session ID <span className="text-amber-400 font-normal">(Giải pháp vượt tường lửa TikTok 100%):</span>
               </span>
               {settings.tiktokSessionId && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
-                  ✓ Đã có Cookie
-                </span>
+                settings.tiktokSessionId.length >= 20 ? (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                    ✓ Đã có Cookie chuẩn
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                    ⚠️ Cookie quá ngắn (chưa đúng)
+                  </span>
+                )
               )}
             </div>
             <button
@@ -1094,38 +1100,46 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type={showSessionId ? 'text' : 'password'}
-                value={settings.tiktokSessionId || ''}
-                onChange={(e) => {
-                  const val = e.target.value.trim();
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem('driving_tiktok_sessionid', val);
-                  }
-                  onUpdateSettings({ tiktokSessionId: val });
-                }}
-                placeholder="Dán mã sessionid hoặc toàn bộ chuỗi cookie từ trình duyệt tại đây..."
-                className="w-full bg-slate-950 border border-slate-700 focus:border-teal-500 rounded-lg pl-3 pr-9 py-1.5 text-xs text-white font-mono placeholder:text-slate-500"
-              />
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type={showSessionId ? 'text' : 'password'}
+                  value={settings.tiktokSessionId || ''}
+                  onChange={(e) => {
+                    const val = e.target.value.trim();
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('driving_tiktok_sessionid', val);
+                    }
+                    onUpdateSettings({ tiktokSessionId: val });
+                  }}
+                  placeholder="Dán mã sessionid (dài 32 ký tự) hoặc toàn bộ chuỗi cookie tại đây..."
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-teal-500 rounded-lg pl-3 pr-9 py-1.5 text-xs text-white font-mono placeholder:text-slate-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSessionId(!showSessionId)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  title={showSessionId ? 'Ẩn' : 'Hiện'}
+                >
+                  {showSessionId ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={() => setShowSessionId(!showSessionId)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-                title={showSessionId ? 'Ẩn' : 'Hiện'}
+                onClick={handleConnect}
+                disabled={tikTokStatus.isConnecting}
+                className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold shrink-0 disabled:opacity-50"
               >
-                {showSessionId ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                {tikTokStatus.isConnecting ? 'Đang nối...' : 'Thử lại'}
               </button>
             </div>
-            <button
-              type="button"
-              onClick={handleConnect}
-              disabled={tikTokStatus.isConnecting}
-              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold shrink-0 disabled:opacity-50"
-            >
-              {tikTokStatus.isConnecting ? 'Đang nối...' : 'Thử lại'}
-            </button>
+
+            {settings.tiktokSessionId && settings.tiktokSessionId.length < 20 && (
+              <p className="text-[11px] text-amber-400 flex items-center gap-1 pl-1">
+                ⚠️ Mã Cookie hiện tại (<code>{settings.tiktokSessionId}</code>) không phải là mã thật của TikTok. Mã Cookie thật là một chuỗi 32 ký tự chữ và số ngẫu nhiên (lấy từ thẻ F12 Application hoặc dùng nút Dấu trang 1-click)!
+              </p>
+            )}
           </div>
 
           {/* Hướng dẫn chi tiết từng bước & Các cách đơn giản hơn */}
