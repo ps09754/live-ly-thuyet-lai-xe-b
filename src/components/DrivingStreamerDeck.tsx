@@ -113,7 +113,10 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
   }, [settings?.tiktokUsername, tikTokStatus?.username]);
 
   const handleConnect = () => {
-    const cleanUser = inputUsername.replace(/^@/, '').trim();
+    let cleanUser = inputUsername.trim();
+    if (!cleanUser.startsWith('http')) {
+      cleanUser = cleanUser.replace(/^@/, '');
+    }
     if (!cleanUser) return;
     if (typeof window !== 'undefined') {
       localStorage.setItem('driving_tiktok_user', cleanUser);
@@ -123,9 +126,14 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
   };
   const [jumpInput, setJumpInput] = useState(String(currentQuestion.id));
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedBookmarklet, setCopiedBookmarklet] = useState(false);
   const [isPlayingTestVoice, setIsPlayingTestVoice] = useState(false);
   const [showCookieGuide, setShowCookieGuide] = useState(false);
   const [showSessionId, setShowSessionId] = useState(false);
+
+  const BOOKMARKLET_CODE = `javascript:(function(){var m=document.cookie.match(/(?:^|;\\s*)sessionid=([^;]+)/);if(m&&m[1]){navigator.clipboard.writeText(m[1]).then(function(){alert('🎉 ĐÃ COPY MÃ COOKIE TIKTOK THÀNH CÔNG!\\n\\nBây giờ bạn chỉ cần quay lại trang điều khiển, bấm Ctrl+V vào ô Cookie rồi bấm Thử lại nhé.');}).catch(function(){prompt('Mã Cookie sessionid của bạn (bấm Ctrl+C để copy):',m[1]);});}else{alert('❌ Không tìm thấy mã sessionid.\\nHãy đảm bảo bạn đang ở trang tiktok.com và đã ĐĂNG NHẬP tài khoản!');}})();`;
+
+  const isUrlOrRoomId = inputUsername.startsWith('http') || /^\d{12,}$/.test(inputUsername);
 
   const handleTestVoice = () => {
     if (isPlayingTestVoice) {
@@ -922,20 +930,28 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-44">
-              <span className="absolute left-2.5 top-2 text-xs text-slate-500 font-bold">@</span>
+            <div className="relative flex-1 sm:w-72">
+              {!isUrlOrRoomId && (
+                <span className="absolute left-2.5 top-2 text-xs text-slate-500 font-bold select-none">@</span>
+              )}
               <input
                 type="text"
                 value={inputUsername}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/^@/, '').trim();
+                  let val = e.target.value.trim();
+                  if (!val.startsWith('http')) {
+                    val = val.replace(/^@/, '');
+                  }
                   setInputUsername(val);
                   if (typeof window !== 'undefined') {
                     localStorage.setItem('driving_tiktok_user', val);
                   }
                 }}
                 onBlur={() => {
-                  const val = inputUsername.replace(/^@/, '').trim();
+                  let val = inputUsername.trim();
+                  if (!val.startsWith('http')) {
+                    val = val.replace(/^@/, '');
+                  }
                   if (val && val !== settings?.tiktokUsername) {
                     onUpdateSettings({ tiktokUsername: val });
                   }
@@ -945,8 +961,10 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
                     handleConnect();
                   }
                 }}
-                placeholder="username"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-6 pr-2 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-teal-500"
+                placeholder="ID kênh / dán Link chia sẻ Live / Room ID"
+                className={`w-full bg-slate-950 border border-slate-700 rounded-xl ${
+                  isUrlOrRoomId ? 'pl-3' : 'pl-6'
+                } pr-2 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-teal-500 placeholder:text-slate-500`}
               />
             </div>
 
@@ -1046,16 +1064,16 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
           {showCookieGuide && (
             <div className="p-3.5 rounded-xl bg-slate-950/90 border border-teal-500/40 text-[11.5px] text-slate-300 space-y-3 leading-relaxed animate-in fade-in">
               {/* Cách 1: Nút Dấu trang 1-Click (Siêu nhanh - không cần F12) */}
-              <div className="p-2.5 rounded-lg bg-teal-950/40 border border-teal-500/30 space-y-1.5">
+              <div className="p-2.5 rounded-lg bg-teal-950/40 border border-teal-500/30 space-y-2">
                 <p className="font-bold text-teal-300 flex items-center gap-1.5">
                   ⭐ Cách 1 (Nhanh nhất - 2 giây, không cần F12): Dùng nút Dấu trang 1-Click
                 </p>
                 <p className="text-slate-300 text-[11px]">
                   Kéo nút màu vàng bên dưới thả lên <b>Thanh dấu trang (Bookmarks bar)</b> của Chrome:
                 </p>
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
                   <a
-                    href="javascript:(function(){var m=document.cookie.match(/(?:^|;\s*)sessionid=([^;]+)/);if(m&amp;&amp;m[1]){navigator.clipboard.writeText(m[1]).then(function(){alert('🎉 ĐÃ COPY MÃ COOKIE TIKTOK THÀNH CÔNG!\n\nBây giờ bạn chỉ cần quay lại trang điều khiển, bấm Ctrl+V vào ô Cookie rồi bấm Thử lại nhé.');}).catch(function(){prompt('Mã Cookie sessionid của bạn (bấm Ctrl+C để copy):',m[1]);});}else{alert('❌ Không tìm thấy mã sessionid.\nHãy đảm bảo bạn đang ở trang tiktok.com và đã ĐĂNG NHẬP tài khoản!');}})();"
+                    href={BOOKMARKLET_CODE}
                     onClick={(e) => {
                       e.preventDefault();
                       alert('👉 Bạn hãy KÉO chuột giữ nút này rồi THẢ lên thanh Dấu trang (Bookmarks bar) của trình duyệt Chrome/Edge nhé!');
@@ -1065,9 +1083,32 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
                   >
                     <span>⚡ Kéo nút này thả vào Dấu trang Chrome</span>
                   </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(BOOKMARKLET_CODE);
+                      setCopiedBookmarklet(true);
+                      setTimeout(() => setCopiedBookmarklet(false), 2500);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-medium"
+                  >
+                    {copiedBookmarklet ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedBookmarklet ? '✓ Đã copy mã!' : 'Copy mã Dấu trang'}</span>
+                  </button>
                 </div>
                 <p className="text-[10.5px] text-slate-400">
                   ➔ Mỗi khi vào <a href="https://www.tiktok.com" target="_blank" rel="noreferrer" className="text-teal-400 underline font-medium">tiktok.com</a>, chỉ cần <b>bấm 1 cái vào dấu trang đó</b> là mã Cookie tự động copy vào chuột, bạn chỉ việc quay lại đây ấn <kbd className="px-1 bg-slate-800 rounded font-mono text-white">Ctrl + V</kbd>!
+                </p>
+              </div>
+
+              {/* Cách 3: Dán link chia sẻ trực tiếp từ TikTok LIVE Studio */}
+              <div className="p-2.5 rounded-lg bg-indigo-950/40 border border-indigo-500/30 space-y-1.5">
+                <p className="font-bold text-indigo-300">
+                  ⭐ Cách 3 (Dán trực tiếp Link chia sẻ từ LIVE Studio – Không cần Cookie):
+                </p>
+                <p className="text-[11px] text-slate-300">
+                  1. Trong <b>TikTok LIVE Studio</b>, bấm vào nút <b>Chia sẻ</b> (biểu tượng ➡️ hoặc 🔗 ở góc dưới khung xem trước) ➔ chọn <b>Sao chép liên kết (Copy link)</b>.<br />
+                  2. Dán thẳng link đó vào ô nhập tài khoản bên trên (hệ thống tự nhận diện Link phòng Live) ➔ Bấm <b>"Kết nối"</b>.
                 </p>
               </div>
 
@@ -1082,10 +1123,10 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
                 </p>
               </div>
 
-              {/* Cách 3: Lấy thủ công bằng F12 */}
+              {/* Cách 4: Lấy thủ công bằng F12 */}
               <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 space-y-1 text-slate-400 text-[11px]">
                 <p className="font-semibold text-slate-300">
-                  ⭐ Cách 3: Lấy thủ công qua F12 (Không cần cài thêm gì):
+                  ⭐ Cách 4: Lấy thủ công qua F12 (Không cần cài thêm gì):
                 </p>
                 <p>
                   Vào <b>tiktok.com</b> ➔ Bấm <b>F12</b> ➔ Thẻ <b>Application</b> ➔ Mục <b>Cookies</b> (chọn tiktok.com) ➔ Copy giá trị ô <b>sessionid</b>.

@@ -503,9 +503,27 @@ function parseTikTokSessionInput(rawInput: string): { sessionId: string; ttTarge
   return { sessionId, ttTargetIdc };
 }
 
-// Connect to TikTok Live room by username or Room ID
-function parseTikTokTarget(raw: string): { username: string; roomId: string } {
+// Connect to TikTok Live room by username, Room ID, or Share Link
+async function resolveTikTokTarget(raw: string): Promise<{ username: string; roomId: string }> {
   let u = (raw || '').trim();
+
+  // If shortened link (vt.tiktok.com / vm.tiktok.com / t.tiktok.com)
+  if (/^https?:\/\/(?:vt|vm|t)\.tiktok\.com/i.test(u)) {
+    try {
+      const res = await fetch(u, {
+        method: 'HEAD',
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      });
+      if (res.url) {
+        u = res.url;
+      }
+    } catch (e) {
+      console.warn('[TikTok] Could not resolve shortened URL redirect:', e);
+    }
+  }
 
   // Check if raw is pure Room ID (15-22 digits)
   if (/^\d{15,22}$/.test(u)) {
@@ -513,14 +531,14 @@ function parseTikTokTarget(raw: string): { username: string; roomId: string } {
   }
 
   // Check if URL contains room_id query parameter or /live/(\d+)
-  const roomIdMatch = u.match(/(?:room_id=|\/live\/)(\d{15,22})/i);
+  const roomIdMatch = u.match(/(?:[?&]room_id=|\/live\/)(\d{15,22})/i);
   const targetRoomId = roomIdMatch ? roomIdMatch[1] : '';
 
-  const urlMatch = u.match(/(?:tiktok\.com\/@|tiktok\.com\/live\/@?)([\w.-]+)/i);
+  const urlMatch = u.match(/(?:tiktok\.com\/@)([\w.-]+)/i);
   let username = '';
   if (urlMatch && urlMatch[1]) {
     username = urlMatch[1].trim();
-  } else {
+  } else if (!u.includes('http')) {
     username = u.replace(/^[@/]+/, '').replace(/[/].*$/, '').trim();
   }
 
@@ -549,7 +567,7 @@ app.post('/api/tiktok/connect', async (req, res) => {
     return res.status(400).json({ success: false, error: 'Thiếu tên tài khoản TikTok (username) hoặc Room ID' });
   }
 
-  const { username: cleanUser, roomId: directRoomId } = parseTikTokTarget(username);
+  const { username: cleanUser, roomId: directRoomId } = await resolveTikTokTarget(username);
   if (!cleanUser) {
     return res.status(400).json({ success: false, error: 'Tên tài khoản hoặc Room ID không hợp lệ' });
   }
