@@ -22,6 +22,12 @@ import {
   Shuffle,
   Maximize2,
   AlertCircle,
+  Eye,
+  EyeOff,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  Key,
 } from 'lucide-react';
 import { socketService } from '../services/socketService';
 import {
@@ -118,6 +124,8 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
   const [jumpInput, setJumpInput] = useState(String(currentQuestion.id));
   const [copiedLink, setCopiedLink] = useState(false);
   const [isPlayingTestVoice, setIsPlayingTestVoice] = useState(false);
+  const [showCookieGuide, setShowCookieGuide] = useState(false);
+  const [showSessionId, setShowSessionId] = useState(false);
 
   const handleTestVoice = () => {
     if (isPlayingTestVoice) {
@@ -968,27 +976,94 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
             <div className="flex-1 space-y-1">
               <p className="font-bold text-rose-300">Chưa thể kết nối phòng Live:</p>
               <p className="text-rose-200/90 leading-relaxed text-[11px]">{tikTokStatus.error}</p>
-              <p className="text-[10.5px] text-slate-400 pt-1 border-t border-rose-500/20">
-                👉 <b>Lưu ý quan trọng:</b> Bạn phải bấm nút <b>"Bắt đầu phát trực tiếp" (Go LIVE)</b> trên TikTok LIVE Studio hoặc điện thoại trước, khi màn hình live đã chính thức phát thì mới bấm nút "Kết nối" ở đây nhé!
+              <p className="text-[10.5px] text-amber-300/90 pt-1 border-t border-rose-500/20">
+                👉 <b>Nếu kênh của bạn ĐANG PHÁT TRỰC TIẾP mà vẫn báo lỗi:</b> Đó là do <b>Tường lửa TikTok chặn bot (SlardarWAF)</b>. Bạn chỉ cần dán mã Cookie <code className="bg-black/40 px-1 py-0.5 rounded text-amber-200">sessionid</code> vào ô bên dưới rồi bấm <b>"Thử lại"</b> là vượt qua 100%!
               </p>
             </div>
           </div>
         )}
 
-        {/* Tùy chọn nâng cao: Vượt chặn IP bằng Cookie Session ID (khi đổi máy / mạng khác bị chặn) */}
-        <div className="pt-2 border-t border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-1.5 text-slate-400">
-            <span className="text-[11px]">🔑 Cookie Session ID (Tùy chọn - chỉ dùng khi đổi máy/mạng khác bị TikTok chặn IP):</span>
+        {/* Tùy chọn nâng cao: Vượt tường lửa TikTok bằng Cookie Session ID */}
+        <div className="pt-2.5 border-t border-slate-700/50 flex flex-col gap-2 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-slate-300">
+              <Key className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-[11.5px] font-semibold text-slate-200">
+                Cookie Session ID <span className="text-amber-400 font-normal">(Giải pháp vượt tường lửa TikTok 100%):</span>
+              </span>
+              {settings.tiktokSessionId && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                  ✓ Đã có Cookie
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCookieGuide(!showCookieGuide)}
+              className="text-[11px] text-teal-400 hover:text-teal-300 flex items-center gap-1 font-medium underline underline-offset-2"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>{showCookieGuide ? 'Ẩn hướng dẫn' : '📖 Hướng dẫn lấy Cookie (30 giây)'}</span>
+              {showCookieGuide ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
           </div>
+
           <div className="flex items-center gap-2">
-            <input
-              type="password"
-              value={settings.tiktokSessionId || ''}
-              onChange={(e) => onUpdateSettings({ tiktokSessionId: e.target.value.trim() })}
-              placeholder="Dán cookie sessionid nếu bị chặn"
-              className="bg-slate-950 border border-slate-700 focus:border-teal-500 rounded-lg px-2.5 py-1 text-xs text-white w-56 font-mono"
-            />
+            <div className="relative flex-1">
+              <input
+                type={showSessionId ? 'text' : 'password'}
+                value={settings.tiktokSessionId || ''}
+                onChange={(e) => {
+                  const val = e.target.value.trim();
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('driving_tiktok_sessionid', val);
+                  }
+                  onUpdateSettings({ tiktokSessionId: val });
+                }}
+                placeholder="Dán mã sessionid hoặc toàn bộ chuỗi cookie từ trình duyệt tại đây..."
+                className="w-full bg-slate-950 border border-slate-700 focus:border-teal-500 rounded-lg pl-3 pr-9 py-1.5 text-xs text-white font-mono placeholder:text-slate-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSessionId(!showSessionId)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                title={showSessionId ? 'Ẩn' : 'Hiện'}
+              >
+                {showSessionId ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={handleConnect}
+              disabled={tikTokStatus.isConnecting}
+              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold shrink-0 disabled:opacity-50"
+            >
+              {tikTokStatus.isConnecting ? 'Đang nối...' : 'Thử lại'}
+            </button>
           </div>
+
+          {/* Hướng dẫn chi tiết từng bước */}
+          {showCookieGuide && (
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-teal-500/30 text-[11.5px] text-slate-300 space-y-2 leading-relaxed animate-in fade-in">
+              <p className="font-bold text-teal-300 flex items-center gap-1.5">
+                💡 3 bước cực nhanh để lấy mã Cookie sessionid:
+              </p>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-300 pl-1">
+                <li>
+                  Mở trình duyệt <b>Chrome</b> hoặc <b>Edge</b> trên máy tính, truy cập <a href="https://www.tiktok.com" target="_blank" rel="noreferrer" className="text-teal-400 underline font-medium">tiktok.com</a> (đảm bảo đang đăng nhập tài khoản Thầy Thoại).
+                </li>
+                <li>
+                  Bấm phím <b>F12</b> (hoặc click chuột phải ➔ chọn <b>Kiểm tra / Inspect</b>) ➔ Chọn tab <b>Application</b> (hoặc <b>Ứng dụng</b>).
+                </li>
+                <li>
+                  Ở menu bên trái: Bấm mục <b>Cookies</b> ➔ chọn <b>https://www.tiktok.com</b> ➔ Tìm dòng có cột Name là <code className="bg-slate-800 text-amber-300 px-1 py-0.5 rounded font-mono">sessionid</code> ➔ Click đúp vào cột <b>Value</b> để Copy toàn bộ chuỗi ký tự đó.
+                </li>
+              </ol>
+              <p className="text-[11px] text-emerald-400 font-medium pt-1 border-t border-slate-800">
+                👉 Dán mã vừa copy vào ô bên trên rồi bấm nút <b>"Thử lại"</b> (hoặc <b>"Kết nối"</b>). Mã sẽ được lưu tự động cho các lần live sau!
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

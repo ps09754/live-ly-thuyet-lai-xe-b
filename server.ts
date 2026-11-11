@@ -477,14 +477,54 @@ app.get('/api/tiktok/status', (_req, res) => {
   return res.json({ success: true, data: liveStats });
 });
 
-// Connect to TikTok Live room by username
-function parseTikTokUsername(raw: string): string {
-  let u = (raw || '').trim();
-  const urlMatch = u.match(/(?:tiktok\.com\/@|tiktok\.com\/live\/@?)([\w.-]+)/i);
-  if (urlMatch && urlMatch[1]) {
-    return urlMatch[1].trim();
+// Helper to parse TikTok session cookie input (supports raw sessionId or full cookie string)
+function parseTikTokSessionInput(rawInput: string): { sessionId: string; ttTargetIdc: string } {
+  const str = (rawInput || '').trim();
+  if (!str) return { sessionId: '', ttTargetIdc: '' };
+
+  let sessionId = '';
+  let ttTargetIdc = 'alisg';
+
+  const sessionMatch = str.match(/(?:^|;\s*)sessionid=([^;]+)/i);
+  const idcMatch = str.match(/(?:^|;\s*)tt-target-idc=([^;]+)/i);
+
+  if (sessionMatch) {
+    sessionId = sessionMatch[1].trim();
+  } else if (!str.includes('=')) {
+    sessionId = str;
+  } else {
+    sessionId = str.split(';')[0].replace(/^sessionid=/i, '').trim();
   }
-  return u.replace(/^[@/]+/, '').replace(/[/].*$/, '').trim();
+
+  if (idcMatch) {
+    ttTargetIdc = idcMatch[1].trim();
+  }
+
+  return { sessionId, ttTargetIdc };
+}
+
+// Connect to TikTok Live room by username or Room ID
+function parseTikTokTarget(raw: string): { username: string; roomId: string } {
+  let u = (raw || '').trim();
+
+  // Check if raw is pure Room ID (15-22 digits)
+  if (/^\d{15,22}$/.test(u)) {
+    return { username: u, roomId: u };
+  }
+
+  // Check if URL contains room_id query parameter or /live/(\d+)
+  const roomIdMatch = u.match(/(?:room_id=|\/live\/)(\d{15,22})/i);
+  const targetRoomId = roomIdMatch ? roomIdMatch[1] : '';
+
+  const urlMatch = u.match(/(?:tiktok\.com\/@|tiktok\.com\/live\/@?)([\w.-]+)/i);
+  let username = '';
+  if (urlMatch && urlMatch[1]) {
+    username = urlMatch[1].trim();
+  } else {
+    username = u.replace(/^[@/]+/, '').replace(/[/].*$/, '').trim();
+  }
+
+  return { username: username || targetRoomId, roomId: targetRoomId };
 }
 
 function formatTikTokError(rawError: unknown, user: string): string {
@@ -492,26 +532,26 @@ function formatTikTokError(rawError: unknown, user: string): string {
   const lower = msg.toLowerCase();
 
   if (lower.includes('room id') || lower.includes('offline') || (lower.includes('not found') && lower.includes('room'))) {
-    return `Tài khoản @${user} hiện CHƯA PHÁT TRỰC TIẾP trên TikTok. Bạn cần bấm nút "Bắt đầu phát trực tiếp" (LIVE) trên TikTok trước, đợi phòng Live chạy rồi mới bấm Kết nối lại nhé!`;
+    return `Chưa thể lấy thông tin phòng Live @${user}. Khả năng cao do TikTok kích hoạt Tường lửa chống bot (WAF Challenge). Hãy dán Cookie sessionid (lấy từ TikTok web) vào ô "Cookie Session ID" bên dưới rồi bấm Kết nối lại nhé!`;
   }
   if (lower.includes('user not found') || lower.includes('404')) {
     return `Không tìm thấy tài khoản @${user}. Vui lòng kiểm tra lại chính xác ID TikTok (viết liền không dấu trong trang cá nhân)!`;
   }
   if (lower.includes('sign') || lower.includes('captcha') || lower.includes('blocked') || lower.includes('limit') || lower.includes('rate')) {
-    return `TikTok đang yêu cầu xác minh bảo mật hoặc tạm giới hạn IP. Bạn hãy đợi 1-2 phút hoặc chuyển mạng kết nối rồi thử lại!`;
+    return `TikTok đang yêu cầu xác minh bảo mật hoặc tạm giới hạn IP. Bạn hãy dán Cookie sessionid vào ô bên dưới rồi thử lại!`;
   }
-  return `Không thể kết nối với @${user}: ${msg}. Hãy đảm bảo kênh đang phát trực tiếp trên TikTok!`;
+  return `Không thể kết nối với @${user}: ${msg}.`;
 }
 
 app.post('/api/tiktok/connect', async (req, res) => {
-  const { username } = req.body;
+  const { username, sessionId: rawSessionId } = req.body;
   if (!username || typeof username !== 'string') {
-    return res.status(400).json({ success: false, error: 'Thiếu tên tài khoản TikTok (username)' });
+    return res.status(400).json({ success: false, error: 'Thiếu tên tài khoản TikTok (username) hoặc Room ID' });
   }
 
-  const cleanUser = parseTikTokUsername(username);
+  const { username: cleanUser, roomId: directRoomId } = parseTikTokTarget(username);
   if (!cleanUser) {
-    return res.status(400).json({ success: false, error: 'Tên tài khoản không hợp lệ' });
+    return res.status(400).json({ success: false, error: 'Tên tài khoản hoặc Room ID không hợp lệ' });
   }
 
   try {
@@ -529,21 +569,43 @@ app.post('/api/tiktok/connect', async (req, res) => {
       isConnected: false,
       isConnecting: true,
       username: cleanUser,
-      roomId: '',
+      roomId: directRoomId || '',
       viewerCount: 0,
       totalLikes: 0,
       error: '',
     };
     broadcastSSE('status', liveStats);
 
-    const sessionId = (req.body.sessionId || currentDrivingSettings.tiktokSessionId || process.env.TIKTOK_SESSION_ID || '').trim();
+    const rawSession = (rawSessionId || currentDrivingSettings.tiktokSessionId || process.env.TIKTOK_SESSION_ID || '').trim();
+    const { sessionId: cleanSessionId, ttTargetIdc } = parseTikTokSessionInput(rawSession);
 
-    const conn = new TikTokLiveConnection(cleanUser, {
+    // Save session ID if provided
+    if (rawSession && rawSession !== currentDrivingSettings.tiktokSessionId) {
+      currentDrivingSettings.tiktokSessionId = rawSession;
+      try {
+        fs.writeFileSync(DRIVING_SETTINGS_FILE, JSON.stringify(currentDrivingSettings, null, 2), 'utf8');
+      } catch {}
+    }
+
+    const connectionOptions: any = {
       processInitialData: true,
       // The gift-list fetch behind this option needs a paid Euler Stream plan; gift events already carry name and diamonds
       enableExtendedGiftInfo: false,
-      ...(sessionId ? { session: { value: { sessionId } } } : {}),
-    });
+    };
+
+    if (cleanSessionId) {
+      connectionOptions.session = {
+        cookie: {
+          type: 'cookie',
+          value: {
+            sessionId: cleanSessionId,
+            ttTargetIdc: ttTargetIdc || 'alisg',
+          },
+        },
+      };
+    }
+
+    const conn = new TikTokLiveConnection(cleanUser, connectionOptions);
 
     conn.on(ControlEvent.CONNECTED, (state: { roomId?: string }) => {
       console.log(`[TikTok LIVE] Connected to @${cleanUser}, room ID: ${state?.roomId}`);
@@ -679,14 +741,14 @@ app.post('/api/tiktok/connect', async (req, res) => {
 
     activeTikTokConn = conn;
 
-    // Connect to room (note: user might not be live right now)
+    // Connect to room (support direct roomId or auto-fetch)
     conn
-      .connect()
+      .connect(directRoomId || undefined)
       .then((state: { roomId?: string }) => {
         return res.json({
           success: true,
           message: `Đang kết nối phòng live @${cleanUser}`,
-          roomId: state.roomId,
+          roomId: state?.roomId || directRoomId,
         });
       })
       .catch((err: unknown) => {
