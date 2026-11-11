@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "TikTok Live Chat Bridge - Ôn Thi Lái Xe B2/C",
+  "version": "1.0.0",
+  "description": "Cầu nối tự động bình luận TikTok LIVE vào ứng dụng Thi Lý Thuyết Lái Xe (Vượt tường lửa 100%)",
+  "permissions": ["activeTab"],
+  "host_permissions": [
+    "https://*.tiktok.com/*",
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.tiktok.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

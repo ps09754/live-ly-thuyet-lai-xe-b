@@ -35,8 +35,21 @@ const io = new SocketIOServer(httpServer, {
 });
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
+// Enable CORS and Chrome Private Network Access (for Chrome Bridge extension & bookmarklet)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Private-Network', 'true');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 app.use(express.json());
 app.use('/assets', express.static(path.join(projectRoot, 'public', 'assets')));
+app.use('/tiktok-bridge.js', express.static(path.join(projectRoot, 'public', 'tiktok-bridge.js')));
 
 // TikTok LIVE Integration State
 interface TikTokStats {
@@ -47,10 +60,14 @@ interface TikTokStats {
   viewerCount: number;
   totalLikes: number;
   error?: string;
+  source?: 'connector' | 'bridge';
+  bridgeLastSeen?: number;
+  bridgeCommentCount?: number;
 }
 
 let activeTikTokConn: InstanceType<typeof TikTokLiveConnection> | null = null;
 let sseClients: express.Response[] = [];
+let bridgeCommentTotal = 0;
 let liveStats: TikTokStats = {
   isConnected: false,
   isConnecting: false,
@@ -59,6 +76,9 @@ let liveStats: TikTokStats = {
   viewerCount: 0,
   totalLikes: 0,
   error: '',
+  source: undefined,
+  bridgeLastSeen: 0,
+  bridgeCommentCount: 0,
 };
 
 function broadcastSSE(eventType: string, data: unknown) {
@@ -638,6 +658,9 @@ app.post('/api/tiktok/connect', async (req, res) => {
         viewerCount: liveStats.viewerCount,
         totalLikes: liveStats.totalLikes,
         error: '',
+        source: 'connector',
+        bridgeLastSeen: 0,
+        bridgeCommentCount: 0,
       };
       broadcastSSE('status', liveStats);
       broadcastSSE('connected', { username: cleanUser, roomId: state?.roomId });
@@ -849,6 +872,138 @@ app.post('/api/control', (req, res) => {
   return res.json({ success: true, stages: sseClients.length });
 });
 
+// Central Helper to process a chat comment into SSE, Socket.io, and driving question votes
+function processIncomingComment(chatData: {
+  username?: string;
+  nickname?: string;
+  comment?: string;
+  avatar?: string;
+}) {
+  const cleanComment = String(chatData.comment || '').trim();
+  if (!cleanComment) return null;
+
+  const cleanUser = String(chatData.username || 'khach_live').replace(/^@/, '').trim();
+  const cleanNick = String(chatData.nickname || cleanUser || 'Học viên').trim();
+
+  const chatEvent = {
+    username: cleanUser,
+    nickname: cleanNick,
+    comment: cleanComment,
+    avatar: chatData.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanUser}`,
+    timestamp: Date.now(),
+  };
+
+  broadcastSSE('chat', chatEvent);
+  io.emit('tiktok:chat', chatEvent);
+
+  if (currentDrivingSession.state === 'running' && currentDrivingSession.phase !== 'revealed') {
+    const currQ = questionsData[currentDrivingSession.currentIndex];
+    const maxOpts = currQ?.options?.length || 4;
+    const opt = extractChosenOption(chatEvent.comment, maxOpts);
+    if (opt && opt >= 1 && opt <= maxOpts) {
+      handleVoteOnServer(opt, chatEvent.username, chatEvent.nickname, chatEvent.avatar);
+    }
+  }
+
+  return chatEvent;
+}
+
+// Endpoint to receive bridged comments from Chrome Extension or Bookmarklet (Phương án 2)
+app.post('/api/tiktok/bridge_comment', (req, res) => {
+  const body = req.body || {};
+  const items: any[] = Array.isArray(body.comments) ? body.comments : [body];
+  let processedCount = 0;
+  let lastEvent = null;
+
+  for (const item of items) {
+    if (item && item.comment) {
+      const evt = processIncomingComment(item);
+      if (evt) {
+        processedCount++;
+        lastEvent = evt;
+      }
+    }
+  }
+
+  bridgeCommentTotal += processedCount;
+
+  const wasDisconnected = !liveStats.isConnected || liveStats.source !== 'bridge';
+  liveStats.isConnected = true;
+  liveStats.isConnecting = false;
+  liveStats.source = 'bridge';
+  liveStats.bridgeLastSeen = Date.now();
+  liveStats.bridgeCommentCount = bridgeCommentTotal;
+  liveStats.error = '';
+
+  const incomingUser = (body.username || items[0]?.username || '').replace(/^@/, '').trim();
+  if (incomingUser && (!liveStats.username || liveStats.source === 'bridge')) {
+    liveStats.username = incomingUser;
+  } else if (!liveStats.username) {
+    liveStats.username = 'thaythoaidaylaixe.oto';
+  }
+
+  if (typeof body.viewerCount === 'number' && body.viewerCount >= 0) {
+    liveStats.viewerCount = body.viewerCount;
+    io.emit('tiktok:roomUser', { viewerCount: liveStats.viewerCount });
+  }
+  if (typeof body.totalLikes === 'number' && body.totalLikes >= 0) {
+    liveStats.totalLikes = body.totalLikes;
+    io.emit('tiktok:like', { totalLikes: liveStats.totalLikes });
+  }
+
+  if (wasDisconnected) {
+    broadcastSSE('status', liveStats);
+    io.emit('tiktok:status', liveStats);
+  }
+
+  return res.json({
+    success: true,
+    processed: processedCount,
+    totalBridged: bridgeCommentTotal,
+    lastEvent,
+  });
+});
+
+// Endpoint for bridge heartbeat (ping every 4s from Chrome)
+app.post('/api/tiktok/bridge_heartbeat', (req, res) => {
+  const { username, viewerCount, totalLikes } = req.body || {};
+  const wasDisconnected = !liveStats.isConnected;
+
+  liveStats.isConnected = true;
+  liveStats.isConnecting = false;
+  liveStats.source = 'bridge';
+  liveStats.bridgeLastSeen = Date.now();
+  liveStats.bridgeCommentCount = bridgeCommentTotal;
+  liveStats.error = '';
+
+  if (username) {
+    const cleanUser = String(username).replace(/^@/, '').trim();
+    if (cleanUser) liveStats.username = cleanUser;
+  } else if (!liveStats.username) {
+    liveStats.username = 'thaythoaidaylaixe.oto';
+  }
+
+  if (typeof viewerCount === 'number' && viewerCount >= 0) {
+    liveStats.viewerCount = viewerCount;
+    io.emit('tiktok:roomUser', { viewerCount: liveStats.viewerCount });
+  }
+  if (typeof totalLikes === 'number' && totalLikes >= 0) {
+    liveStats.totalLikes = totalLikes;
+    io.emit('tiktok:like', { totalLikes: liveStats.totalLikes });
+  }
+
+  if (wasDisconnected) {
+    broadcastSSE('status', liveStats);
+    io.emit('tiktok:status', liveStats);
+  }
+
+  return res.json({
+    success: true,
+    bridgeActive: true,
+    bridgeCommentCount: bridgeCommentTotal,
+  });
+});
+
 // Disconnect route
 app.post('/api/tiktok/disconnect', (_req, res) => {
   try {
@@ -864,8 +1019,12 @@ app.post('/api/tiktok/disconnect', (_req, res) => {
       viewerCount: 0,
       totalLikes: 0,
       error: '',
+      source: undefined,
+      bridgeLastSeen: 0,
+      bridgeCommentCount: 0,
     };
     broadcastSSE('status', liveStats);
+    io.emit('tiktok:status', liveStats);
     return res.json({ success: true, message: 'Đã ngắt kết nối TikTok LIVE' });
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -1258,25 +1417,7 @@ app.get('/api/questions', (_req, res) => {
 // Endpoint to simulate test chat comments (for testing offline without active TikTok Live)
 app.post('/api/tiktok/test-chat', (req, res) => {
   const { username = 'hocvien_test', nickname = 'Học Viên 99', comment = '1', avatar = '' } = req.body || {};
-  const chatEvent = {
-    username,
-    nickname,
-    comment: String(comment),
-    avatar: avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`,
-    timestamp: Date.now(),
-  };
-  broadcastSSE('chat', chatEvent);
-  io.emit('tiktok:chat', chatEvent);
-
-  if (currentDrivingSession.state === 'running' && currentDrivingSession.phase !== 'revealed') {
-    const currQ = questionsData[currentDrivingSession.currentIndex];
-    const maxOpts = currQ?.options?.length || 4;
-    const opt = extractChosenOption(chatEvent.comment, maxOpts);
-    if (opt && opt >= 1 && opt <= maxOpts) {
-      handleVoteOnServer(opt, chatEvent.username, chatEvent.nickname, chatEvent.avatar);
-    }
-  }
-
+  const chatEvent = processIncomingComment({ username, nickname, comment, avatar });
   return res.json({ success: true, event: chatEvent });
 });
 

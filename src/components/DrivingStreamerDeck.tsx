@@ -128,10 +128,12 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
   const [jumpInput, setJumpInput] = useState(String(currentQuestion.id));
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedBookmarklet, setCopiedBookmarklet] = useState(false);
+  const [copiedBridgeBookmarklet, setCopiedBridgeBookmarklet] = useState(false);
+  const [copiedFolder, setCopiedFolder] = useState(false);
   const [isPlayingTestVoice, setIsPlayingTestVoice] = useState(false);
   const [showCookieGuide, setShowCookieGuide] = useState(false);
   const [showSessionId, setShowSessionId] = useState(false);
-  const [connectMode, setConnectMode] = useState<'username' | 'link'>('username');
+  const [connectMode, setConnectMode] = useState<'bridge' | 'username' | 'link'>('bridge');
   const [inputLink, setInputLink] = useState('');
 
   const handleConnectLink = () => {
@@ -932,13 +934,30 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
                     : 'bg-slate-700 text-slate-400'
                 }`}
               >
-                {tikTokStatus.isConnected ? `@${tikTokStatus.username} (Đã kết nối)` : 'Chưa kết nối'}
+                {tikTokStatus.isConnected
+                  ? `${tikTokStatus.source === 'bridge' ? '⚡ Cầu nối Chrome' : '@' + tikTokStatus.username} (Đã kết nối)`
+                  : 'Chưa kết nối'}
               </span>
             </div>
           </div>
 
-          {/* Tab chọn cách kết nối: Tên kênh (@username) hoặc Link chia sẻ (Cách 3) */}
-          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-700">
+          {/* Tab chọn cách kết nối: Cầu nối Chrome (Khuyên dùng) / Tên kênh (@username) / Link chia sẻ (Cách 3) */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-700 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setConnectMode('bridge')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                connectMode === 'bridge'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-900/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-300" />
+              <span>⚡ Cầu nối Chrome (Phương án 2)</span>
+              {tikTokStatus.source === 'bridge' && tikTokStatus.isConnected && (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+              )}
+            </button>
             <button
               type="button"
               onClick={() => setConnectMode('username')}
@@ -960,13 +979,132 @@ export const DrivingStreamerDeck: React.FC<DrivingStreamerDeckProps> = ({
               }`}
             >
               <Link2 className="w-3.5 h-3.5" />
-              <span>🔗 Dán Link Live (Cách 3)</span>
+              <span>🔗 Dán Link Live</span>
             </button>
           </div>
         </div>
 
-        {/* Khung nhập tương ứng theo Mode đã chọn */}
-        {connectMode === 'username' ? (
+        {/* Khung tương ứng theo Mode đã chọn */}
+        {connectMode === 'bridge' ? (
+          <div className="space-y-3 animate-in fade-in">
+            {/* Bridge Live Indicator Card */}
+            <div
+              className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
+                tikTokStatus.source === 'bridge' && tikTokStatus.isConnected
+                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200'
+                  : 'bg-slate-950/60 border-slate-700/60 text-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="relative flex h-3.5 w-3.5 shrink-0">
+                  {tikTokStatus.source === 'bridge' && tikTokStatus.isConnected && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-3.5 w-3.5 ${
+                      tikTokStatus.source === 'bridge' && tikTokStatus.isConnected
+                        ? 'bg-emerald-400'
+                        : 'bg-amber-400 animate-pulse'
+                    }`}
+                  ></span>
+                </span>
+                <div>
+                  <div className="text-xs font-bold flex items-center gap-2">
+                    <span>
+                      {tikTokStatus.source === 'bridge' && tikTokStatus.isConnected
+                        ? 'Cầu nối Chrome đang chạy mượt mà'
+                        : 'Đang đợi tín hiệu từ Tab Chrome xem Live...'}
+                    </span>
+                    {tikTokStatus.source === 'bridge' && tikTokStatus.isConnected && (
+                      <span className="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-mono font-bold">
+                        ĐÃ KẾT NỐI TRỰC TIẾP
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    {tikTokStatus.source === 'bridge' && tikTokStatus.isConnected
+                      ? `Kênh: @${tikTokStatus.username || 'thaythoaidaylaixe.oto'} • Đã nhận: ${tikTokStatus.bridgeCommentCount || 0} bình luận`
+                      : 'Chưa có dữ liệu từ Chrome. Hãy mở Tab xem Live trên Chrome và kích hoạt theo Cách A hoặc Cách B bên dưới.'}
+                  </div>
+                </div>
+              </div>
+
+              {tikTokStatus.isConnected && (
+                <button
+                  onClick={onDisconnectTikTok}
+                  className="px-3 py-1.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-lg text-xs font-bold transition-all shrink-0 ml-2"
+                >
+                  Ngắt kết nối
+                </button>
+              )}
+            </div>
+
+            {/* Hướng dẫn 2 lựa chọn: Bookmarklet hoặc Extension */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Lựa chọn 1: Tiện ích mở rộng Chrome Extension */}
+              <div className="p-3 rounded-xl bg-slate-950/80 border border-teal-500/40 hover:border-teal-400/70 transition-all space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-teal-300 flex items-center gap-1.5">
+                    <span>🧩</span> Cách A: Cài Tiện ích Chrome (Khuyên Dùng)
+                  </span>
+                  <span className="text-[10px] bg-teal-500/20 text-teal-300 px-1.5 py-0.5 rounded font-bold">Cài 1 Lần Dùng Mãi</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  1. Mở Chrome vào <code className="text-teal-300 font-mono">chrome://extensions</code> ➔ Bật <b>"Chế độ cho nhà phát triển" (Developer mode)</b> ở góc trên bên phải.<br />
+                  2. Bấm <b>"Tải tiện ích đã giải nén" (Load unpacked)</b> ➔ Chọn thư mục có tên:
+                </p>
+                <div className="bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+                  <code className="text-[11px] text-amber-300 font-mono truncate select-all">
+                    extension-tiktok-bridge
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText("extension-tiktok-bridge");
+                      setCopiedFolder(true);
+                      setTimeout(() => setCopiedFolder(false), 2500);
+                    }}
+                    className="text-[10px] text-teal-400 hover:text-teal-300 font-bold ml-2 shrink-0"
+                  >
+                    {copiedFolder ? '✓ Đã chép' : 'Sao chép tên thư mục'}
+                  </button>
+                </div>
+                <p className="text-[10.5px] text-slate-400">
+                  ➔ Cài xong, chỉ cần mở tab TikTok Live Thầy Thoại trên Chrome, tiện ích sẽ tự động nhận diện và chuyển bình luận 1, 2, 3, 4 vào game!
+                </p>
+              </div>
+
+              {/* Lựa chọn 2: Nút Dấu Trang (Bookmarklet - Không cần cài đặt) */}
+              <div className="p-3 rounded-xl bg-slate-950/80 border border-indigo-500/40 hover:border-indigo-400/70 transition-all space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                    <span>⭐</span> Cách B: Dùng Dấu Trang (Bookmarklet)
+                  </span>
+                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded font-bold">Không Cần Cài Gì</span>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  Bấm nút bên dưới để sao chép mã Dấu trang, sau đó tạo một Bookmark trên thanh dấu trang Chrome và dán mã này vào ô URL:
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const bookmarkletCode = `javascript:(function(){const s=document.createElement('script');s.src='http://localhost:3000/tiktok-bridge.js?t='+Date.now();document.body.appendChild(s);})();`;
+                    navigator.clipboard?.writeText(bookmarkletCode);
+                    setCopiedBridgeBookmarklet(true);
+                    setTimeout(() => setCopiedBridgeBookmarklet(false), 3000);
+                  }}
+                  className="w-full py-2 px-3 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20"
+                >
+                  <span>📋</span>
+                  <span>{copiedBridgeBookmarklet ? '✓ Đã sao chép mã Dấu trang!' : 'Sao chép mã Dấu trang (1-Click)'}</span>
+                </button>
+                <p className="text-[10.5px] text-slate-400">
+                  ➔ Mỗi khi vào xem Live trên Chrome, bạn chỉ việc <b>bấm 1 cái vào Dấu trang này</b> là kết nối thành công ngay lập tức!
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : connectMode === 'username' ? (
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <span className="absolute left-2.5 top-2 text-xs text-slate-500 font-bold select-none">@</span>

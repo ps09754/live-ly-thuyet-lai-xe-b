@@ -124,4 +124,7 @@ export interface TikTokLiveStatus {
   viewerCount: number;
   totalLikes: number;
   error?: string;
+  source?: 'connector' | 'bridge';
+  bridgeLastSeen?: number;
+  bridgeCommentCount?: number;
 }

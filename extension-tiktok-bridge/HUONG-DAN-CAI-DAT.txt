@@ -1,0 +1,22 @@
+HƯỚNG DẪN CÀI ĐẶT TIỆN ÍCH CHROME: CẦU NỐI TIKTOK LIVE CHAT (PHƯƠNG ÁN 2)
+========================================================================
+(Giải pháp vượt tường lửa TikTok 100% - Không bao giờ bị chặn hay lỗi Room ID)
+
+BƯỚC 1: Mở trang quản lý Tiện ích trong Chrome
+- Mở trình duyệt Google Chrome trên máy tính của bạn.
+- Nhập vào thanh địa chỉ: chrome://extensions rồi nhấn Enter.
+
+BƯỚC 2: Bật Chế độ dành cho nhà phát triển (Developer mode)
+- Nhìn lên góc trên cùng bên phải màn hình Chrome.
+- Bật công tắc "Chế độ dành cho nhà phát triển" (Developer mode) sang ON.
+
+BƯỚC 3: Tải Tiện ích vào Chrome
+- Nhấn vào nút "Tải tiện ích đã giải nén" (Load unpacked) ở góc trên bên trái.
+- Chọn thư mục: extension-tiktok-bridge (nằm ngay trong thư mục dự án này).
+- Nhấn Select Folder (Chọn thư mục).
+
+BƯỚC 4: Hoàn tất & Trải nghiệm
+- Mở tab Chrome vào trang TikTok Live của bạn (ví dụ: https://www.tiktok.com/@thaythoaidaylaixe.oto/live).
+- Nhìn xuống góc dưới bên phải màn hình TikTok sẽ thấy bảng thông báo màu xanh:
+  "🟢 Cầu Nối Lái Xe B2/C: Đã kết nối App Lái Xe"
+- Bất kỳ bình luận 1, 2, 3, 4 nào của học viên gửi trên Live sẽ ngay lập tức được chuyển thẳng vào Game thi sát hạch!

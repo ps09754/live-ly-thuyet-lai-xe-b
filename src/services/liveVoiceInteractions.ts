@@ -70,7 +70,7 @@ class RecentHistoryTracker<T extends string> {
   }
 
   public pick(items: T[]): T {
-    if (items.length === 0) return '';
+    if (items.length === 0) return '' as T;
     const available = items.filter((item) => !this.history.includes(item));
     const pool = available.length > 0 ? available : items;
     const chosen = pool[Math.floor(Math.random() * pool.length)];
